@@ -1,0 +1,51 @@
+@import url("https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap");
+@import "tailwindcss";
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+}
+
+html {
+  /* stop iOS Safari inflating text in landscape */
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  /* safety net: nothing on a phone should force sideways page scroll —
+     wide tables scroll inside their own container instead */
+  overflow-x: hidden;
+}
+
+/* remove the native select arrow — Select.tsx draws its own ChevronDown */
+select {
+  background-image: none;
+}
+
+/* momentum scrolling for the horizontal table wrappers on touch devices */
+.scroll-touch {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
+/* respects the iPhone home indicator / notch on full-screen mobile sheets */
+.safe-b {
+  padding-bottom: max(0px, env(safe-area-inset-bottom));
+}
+.safe-t {
+  padding-top: max(0px, env(safe-area-inset-top));
+}
+
+/* Tailwind v4's preflight no longer sets `cursor: pointer` on buttons the way
+   v3 did, so every clickable in the app renders the default arrow. Restore it
+   once here rather than sprinkling `cursor-pointer` on each button. */
+button:not(:disabled),
+[role="button"]:not(:disabled),
+label:has(> input[type="checkbox"], > input[type="radio"]) {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
