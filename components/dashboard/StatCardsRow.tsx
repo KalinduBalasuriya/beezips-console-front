@@ -1,9 +1,12 @@
-import { Factory, Wallet, Receipt } from "lucide-react";
-import { money, qty } from "../../lib/format";
-import { bottlesProduced, cashCollected, totalExpenses } from "../../lib/selectors";
+import { Wallet, Receipt, TrendingUp } from "lucide-react";
+import { money } from "../../lib/format";
+import { cashCollected, totalExpenses, profitAndLoss } from "../../lib/selectors";
 import { periodLabel } from "../../lib/period";
 import { ROUTES } from "../../lib/routes";
 import StatCard from "../ui/StatCard";
+import BottlesProducedStatCard from "./BottlesProducedStatCard";
+import BottlesSoldStatCard from "./BottlesSoldStatCard";
+import FinishedStockStatCard from "./FinishedStockStatCard";
 import type { DateRange, LoadState } from "../../lib/types";
 
 interface StatCardsRowProps {
@@ -21,18 +24,16 @@ interface StatCardsRowProps {
 export default function StatCardsRow({ range, state }: StatCardsRowProps) {
   const loading = state !== "ready" || !range;
   const sub = range ? `${periodLabel(range)}, month to date` : undefined;
+  const profitable = range ? profitAndLoss(range).net >= 0 : true;
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-4 mb-5 sm:mb-8">
-      <StatCard
-        icon={Factory}
-        label="Bottles produced"
-        value={range ? qty(bottlesProduced(range)) : null}
-        loading={loading}
-        sub={sub}
-        viewAllHref={ROUTES.production}
-        viewAllLabel="View all bottles produced"
-      />
+    <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-2.5 sm:gap-4 mb-5 sm:mb-8">
+      {/* The two cards that carry a Large/Small pair sit together: each needs a
+          second line in a narrow column, so pairing them keeps either from
+          stretching a single-figure card beside it. */}
+      <BottlesProducedStatCard range={range} state={state} sub={sub} />
+      <BottlesSoldStatCard range={range} state={state} sub={sub} />
+      <FinishedStockStatCard state={state} sub={sub} />
       <StatCard
         icon={Wallet}
         label="Cash collected"
@@ -50,8 +51,22 @@ export default function StatCardsRow({ range, state }: StatCardsRowProps) {
         sub={sub}
         viewAllHref={ROUTES.financeExpenses}
         viewAllLabel="View all expenses"
-        /* the third card fills the row on mobile, where the grid is 2-up */
-        className="col-span-2 lg:col-span-1"
+      />
+
+      {/* No card carries a span, so every one occupies a single column and they
+          all render at the same width. */}
+      <StatCard
+        icon={TrendingUp}
+        label="Profit / loss"
+        value={range ? money(profitAndLoss(range).net) : null}
+        loading={loading}
+        /* the pill names the outcome, so the meaning is not carried by colour
+           alone, and unlike `sub` it stays visible on a phone */
+        trend={profitable ? "Profit" : "Loss"}
+        trendUp={profitable}
+        sub={sub}
+        viewAllHref={ROUTES.financeProfitLoss}
+        viewAllLabel="View profit and loss"
       />
     </div>
   );

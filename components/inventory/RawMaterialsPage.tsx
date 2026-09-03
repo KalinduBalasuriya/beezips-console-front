@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { Boxes, Plus, Search, PackageSearch } from "lucide-react";
 import { INVENTORY_CATEGORIES } from "../../data/mockData";
-import { inventoryByCategory, isLowStock } from "../../lib/selectors";
+import { inventoryByCategory, inventoryKey, inventoryLabel, isLowStock } from "../../lib/selectors";
 import { money, qty as fmtQty, shortDate } from "../../lib/format";
 import { C, FONT_BODY, FONT_MONO } from "../../lib/theme";
 import PageHeader from "../ui/PageHeader";
@@ -78,7 +78,7 @@ export default function InventoryPage() {
               const low = isLowStock(m);
               return (
                 <div
-                  key={`${m.category}-${m.name}`}
+                  key={inventoryKey(m)}
                   className="rounded-xl p-3"
                   style={{ background: C.card, border: `1px solid ${C.line}`, fontFamily: FONT_BODY }}
                 >
@@ -87,7 +87,7 @@ export default function InventoryPage() {
                       <PackageSearch size={15} color={C.ink400} className="shrink-0" aria-hidden />
                       <div className="min-w-0">
                         <p className="text-[13px] font-semibold truncate" style={{ color: C.ink900 }}>
-                          {m.name}
+                          {inventoryLabel(m)}
                         </p>
                         <p className="text-[11px] mt-0.5" style={{ color: C.ink400 }}>
                           {m.category} · updated {shortDate(m.updated)}
@@ -159,11 +159,11 @@ export default function InventoryPage() {
                   {rows.map((m) => {
                     const low = isLowStock(m);
                     return (
-                      <tr key={`${m.category}-${m.name}`} style={{ borderTop: `1px solid ${C.line}` }}>
+                      <tr key={inventoryKey(m)} style={{ borderTop: `1px solid ${C.line}` }}>
                         <td className="px-5 py-3 font-medium whitespace-nowrap" style={{ color: C.ink900 }}>
                           <span className="flex items-center gap-2.5">
                             <PackageSearch size={14} color={C.ink400} className="shrink-0" aria-hidden />
-                            {m.name}
+                            {inventoryLabel(m)}
                           </span>
                         </td>
                         <td className="px-5 py-3" style={{ color: C.ink600 }}>

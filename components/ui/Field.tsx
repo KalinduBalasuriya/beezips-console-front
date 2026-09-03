@@ -5,9 +5,11 @@ interface FieldProps {
   label: string;
   children: ReactNode;
   hint?: string;
+  /** validation message; replaces the hint while present */
+  error?: string;
 }
 
-export default function Field({ label, children, hint }: FieldProps) {
+export default function Field({ label, children, hint, error }: FieldProps) {
   return (
     <label className="block mb-3 sm:mb-4">
       <span
@@ -17,13 +19,24 @@ export default function Field({ label, children, hint }: FieldProps) {
         {label}
       </span>
       {children}
-      {hint && (
+      {/* the error takes the hint's place rather than stacking under it, so a
+          field never grows by two lines at once */}
+      {error ? (
         <span
           className="block text-[11px] mt-1 sm:text-xs"
-          style={{ color: C.ink400, fontFamily: FONT_BODY }}
+          style={{ color: C.danger, fontFamily: FONT_BODY }}
         >
-          {hint}
+          {error}
         </span>
+      ) : (
+        hint && (
+          <span
+            className="block text-[11px] mt-1 sm:text-xs"
+            style={{ color: C.ink400, fontFamily: FONT_BODY }}
+          >
+            {hint}
+          </span>
+        )
       )}
     </label>
   );

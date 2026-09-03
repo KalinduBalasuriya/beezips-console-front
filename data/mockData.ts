@@ -68,106 +68,135 @@ export const DISTRIBUTORS: Distributor[] = [
 /* each sale is broken into flavor line items, each with large/small bottle
    quantities; largePrice/smallPrice are this sale's unit prices */
 export const SALES: Sale[] = [
-  { id: 1, date: "2026-08-17", distributor: "Kandy Beverages Co.", items: [{ flavor: "Mango", large: 80, small: 40 }, { flavor: "Tamarind", large: 60, small: 40 }], largePrice: 175, smallPrice: 95, status: "Paid" },
-  { id: 2, date: "2026-08-17", distributor: "Peradeniya Distributors", items: [{ flavor: "Soursop", large: 70, small: 50 }, { flavor: "Mixed fruit", large: 40, small: 20 }], largePrice: 175, smallPrice: 95, status: "Due", statusAmt: 4500 },
-  { id: 3, date: "2026-08-16", distributor: "Digana Retail Hub", items: [{ flavor: "Mango", large: 120, small: 60 }, { flavor: "Passion fruit", large: 70, small: 30 }, { flavor: "Tamarind", large: 15, small: 5 }], largePrice: 175, smallPrice: 95, status: "Paid" },
-  { id: 4, date: "2026-08-16", distributor: "Katugastota Traders", items: [{ flavor: "Mixed fruit", large: 100, small: 50 }], largePrice: 175, smallPrice: 95, status: "Exceed", statusAmt: 1200 },
-  { id: 5, date: "2026-08-15", distributor: "Gampola Agents", items: [{ flavor: "Soursop", large: 130, small: 50 }, { flavor: "Mango", large: 20, small: 10 }], largePrice: 175, smallPrice: 95, status: "Due", statusAmt: 6000 },
-  { id: 6, date: "2026-08-14", distributor: "Kandy Beverages Co.", items: [{ flavor: "Soursop", large: 90, small: 30 }], largePrice: 175, smallPrice: 95, status: "Paid" },
-  { id: 7, date: "2026-08-13", distributor: "Peradeniya Distributors", items: [{ flavor: "Mango", large: 60, small: 40 }, { flavor: "Tamarind", large: 40, small: 20 }], largePrice: 175, smallPrice: 95, status: "Paid" },
-  { id: 8, date: "2026-08-12", distributor: "Digana Retail Hub", items: [{ flavor: "Mixed fruit", large: 80, small: 40 }], largePrice: 175, smallPrice: 95, status: "Due", statusAmt: 3000 },
-  { id: 9, date: "2026-08-11", distributor: "Katugastota Traders", items: [{ flavor: "Passion fruit", large: 50, small: 20 }, { flavor: "Mango", large: 30, small: 10 }], largePrice: 175, smallPrice: 95, status: "Paid" },
-  { id: 10, date: "2026-08-10", distributor: "Gampola Agents", items: [{ flavor: "Tamarind", large: 70, small: 30 }], largePrice: 175, smallPrice: 95, status: "Exceed", statusAmt: 900 },
+  { id: 1, date: "2026-09-01", distributor: "Kandy Beverages Co.", items: [{ flavor: "Mango", large: 80, small: 40 }, { flavor: "Tamarind", large: 60, small: 40 }], largePrice: 175, smallPrice: 95, status: "Paid" },
+  { id: 2, date: "2026-09-01", distributor: "Peradeniya Distributors", items: [{ flavor: "Soursop", large: 70, small: 50 }, { flavor: "Mixed fruit", large: 40, small: 20 }], largePrice: 175, smallPrice: 95, status: "Due", statusAmt: 4500 },
+  { id: 3, date: "2026-08-31", distributor: "Digana Retail Hub", items: [{ flavor: "Mango", large: 120, small: 60 }, { flavor: "Passion fruit", large: 70, small: 30 }, { flavor: "Tamarind", large: 15, small: 5 }], largePrice: 175, smallPrice: 95, status: "Paid" },
+  { id: 4, date: "2026-08-31", distributor: "Katugastota Traders", items: [{ flavor: "Mixed fruit", large: 100, small: 50 }], largePrice: 175, smallPrice: 95, status: "Exceed", statusAmt: 1200 },
+  { id: 5, date: "2026-08-30", distributor: "Gampola Agents", items: [{ flavor: "Soursop", large: 130, small: 50 }, { flavor: "Mango", large: 20, small: 10 }], largePrice: 175, smallPrice: 95, status: "Due", statusAmt: 6000 },
+  { id: 6, date: "2026-08-29", distributor: "Kandy Beverages Co.", items: [{ flavor: "Soursop", large: 90, small: 30 }], largePrice: 175, smallPrice: 95, status: "Paid" },
+  { id: 7, date: "2026-08-28", distributor: "Peradeniya Distributors", items: [{ flavor: "Mango", large: 60, small: 40 }, { flavor: "Tamarind", large: 40, small: 20 }], largePrice: 175, smallPrice: 95, status: "Paid" },
+  { id: 8, date: "2026-08-27", distributor: "Digana Retail Hub", items: [{ flavor: "Mixed fruit", large: 80, small: 40 }], largePrice: 175, smallPrice: 95, status: "Due", statusAmt: 3000 },
+  { id: 9, date: "2026-08-26", distributor: "Katugastota Traders", items: [{ flavor: "Passion fruit", large: 50, small: 20 }, { flavor: "Mango", large: 30, small: 10 }], largePrice: 175, smallPrice: 95, status: "Paid" },
+  { id: 10, date: "2026-08-25", distributor: "Gampola Agents", items: [{ flavor: "Tamarind", large: 70, small: 30 }], largePrice: 175, smallPrice: 95, status: "Exceed", statusAmt: 900 },
   /* large-only and small-only transactions — the dashboard renders the missing
      size as an em dash rather than a zero (spec §42) */
-  { id: 11, date: "2026-08-09", distributor: "Kandy Beverages Co.", items: [{ flavor: "Mango", large: 140, small: 0 }], largePrice: 175, smallPrice: 95, status: "Paid" },
-  { id: 12, date: "2026-08-07", distributor: "Digana Retail Hub", items: [{ flavor: "Passion fruit", large: 0, small: 180 }], largePrice: 175, smallPrice: 95, status: "Paid" },
+  { id: 11, date: "2026-08-24", distributor: "Kandy Beverages Co.", items: [{ flavor: "Mango", large: 140, small: 0 }], largePrice: 175, smallPrice: 95, status: "Paid" },
+  { id: 12, date: "2026-08-22", distributor: "Digana Retail Hub", items: [{ flavor: "Passion fruit", large: 0, small: 180 }], largePrice: 175, smallPrice: 95, status: "Paid" },
 ];
 
 /* full inventory register — raw materials and finished juice stock share one
    model so the category filter can span both (spec §19–22) */
 export const INVENTORY: InventoryItem[] = [
-  { name: "Glass bottles", category: "Packaging", qty: 3200, unit: "pcs", reorder: 1000, cap: 5000, price: 118, updated: "2026-08-17" },
-  { name: "Lids", category: "Packaging", qty: 4100, unit: "pcs", reorder: 1500, cap: 5000, price: 8, updated: "2026-08-16" },
-  { name: "Cartons (24-pack)", category: "Packaging", qty: 620, unit: "pcs", reorder: 300, cap: 1200, price: 95, updated: "2026-08-09" },
-  { name: "Labels", category: "Packaging", qty: 5200, unit: "pcs", reorder: 2000, cap: 8000, price: 3, updated: "2026-08-09" },
-  { name: "Sugar", category: "Ingredients", qty: 85, unit: "kg", reorder: 200, cap: 500, price: 245, updated: "2026-08-14" },
-  { name: "Citric acid", category: "Ingredients", qty: 18, unit: "kg", reorder: 20, cap: 60, price: 650, updated: "2026-08-08" },
-  { name: "Mango", category: "Fruits", qty: 60, unit: "kg", reorder: 100, cap: 300, price: 220, updated: "2026-08-17" },
-  { name: "Soursop", category: "Fruits", qty: 140, unit: "kg", reorder: 100, cap: 300, price: 310, updated: "2026-08-15" },
-  { name: "Tamarind", category: "Fruits", qty: 95, unit: "kg", reorder: 100, cap: 300, price: 180, updated: "2026-08-13" },
-  { name: "Mixed fruit blend", category: "Fruits", qty: 70, unit: "kg", reorder: 80, cap: 300, price: 260, updated: "2026-08-12" },
-  { name: "Passion fruit", category: "Fruits", qty: 40, unit: "kg", reorder: 60, cap: 300, price: 340, updated: "2026-08-11" },
-  { name: "LPG gas", category: "Utilities", qty: 3, unit: "cylinders", reorder: 2, cap: 10, price: 4800, updated: "2026-08-10" },
-  { name: "Mango juice", category: "Finished Goods", qty: 420, unit: "bottles", reorder: 150, cap: 600, price: 175, updated: "2026-08-17" },
-  { name: "Soursop juice", category: "Finished Goods", qty: 310, unit: "bottles", reorder: 150, cap: 600, price: 175, updated: "2026-08-17" },
-  { name: "Tamarind juice", category: "Finished Goods", qty: 260, unit: "bottles", reorder: 150, cap: 600, price: 175, updated: "2026-08-16" },
-  { name: "Mixed fruit juice", category: "Finished Goods", qty: 180, unit: "bottles", reorder: 150, cap: 600, price: 175, updated: "2026-08-16" },
-  { name: "Passion fruit juice", category: "Finished Goods", qty: 90, unit: "bottles", reorder: 150, cap: 600, price: 175, updated: "2026-08-15" },
+  /* empty bottles are a different item per size — a batch draws on the stock
+     matching the size it is bottling */
+  { name: "Glass bottles (Large)", category: "Packaging", qty: 1800, unit: "pcs", reorder: 600, cap: 3000, price: 118, updated: "2026-09-01" },
+  { name: "Glass bottles (Small)", category: "Packaging", qty: 1400, unit: "pcs", reorder: 400, cap: 2000, price: 95, updated: "2026-09-01" },
+  { name: "Lids", category: "Packaging", qty: 4100, unit: "pcs", reorder: 1500, cap: 5000, price: 8, updated: "2026-08-31" },
+  { name: "Cartons (24-pack)", category: "Packaging", qty: 620, unit: "pcs", reorder: 300, cap: 1200, price: 95, updated: "2026-08-24" },
+  { name: "Labels", category: "Packaging", qty: 5200, unit: "pcs", reorder: 2000, cap: 8000, price: 3, updated: "2026-08-24" },
+  { name: "Sugar", category: "Ingredients", qty: 85, unit: "kg", reorder: 200, cap: 500, price: 245, updated: "2026-08-29" },
+  { name: "Citric acid", category: "Ingredients", qty: 18, unit: "kg", reorder: 20, cap: 60, price: 650, updated: "2026-08-23" },
+  { name: "Mango", category: "Fruits", qty: 60, unit: "kg", reorder: 100, cap: 300, price: 220, updated: "2026-09-01" },
+  { name: "Soursop", category: "Fruits", qty: 140, unit: "kg", reorder: 100, cap: 300, price: 310, updated: "2026-08-30" },
+  { name: "Tamarind", category: "Fruits", qty: 95, unit: "kg", reorder: 100, cap: 300, price: 180, updated: "2026-08-28" },
+  { name: "Mixed fruit blend", category: "Fruits", qty: 70, unit: "kg", reorder: 80, cap: 300, price: 260, updated: "2026-08-27" },
+  { name: "Passion fruit", category: "Fruits", qty: 40, unit: "kg", reorder: 60, cap: 300, price: 340, updated: "2026-08-26" },
+  { name: "LPG gas", category: "Utilities", qty: 3, unit: "cylinders", reorder: 2, cap: 10, price: 4800, updated: "2026-08-25" },
+  /* finished juice is held per bottle size — one row per flavor per size, so
+     stock can be reported the same way production and sales already are */
+  { name: "Mango juice", category: "Finished Goods", bottleSize: "LARGE", qty: 260, unit: "bottles", reorder: 100, cap: 400, price: 175, updated: "2026-09-01" },
+  { name: "Mango juice", category: "Finished Goods", bottleSize: "SMALL", qty: 160, unit: "bottles", reorder: 80, cap: 300, price: 95, updated: "2026-09-01" },
+  { name: "Soursop juice", category: "Finished Goods", bottleSize: "LARGE", qty: 190, unit: "bottles", reorder: 100, cap: 400, price: 175, updated: "2026-09-01" },
+  { name: "Soursop juice", category: "Finished Goods", bottleSize: "SMALL", qty: 120, unit: "bottles", reorder: 80, cap: 300, price: 95, updated: "2026-09-01" },
+  { name: "Tamarind juice", category: "Finished Goods", bottleSize: "LARGE", qty: 150, unit: "bottles", reorder: 100, cap: 400, price: 175, updated: "2026-08-31" },
+  { name: "Tamarind juice", category: "Finished Goods", bottleSize: "SMALL", qty: 110, unit: "bottles", reorder: 80, cap: 300, price: 95, updated: "2026-08-31" },
+  { name: "Mixed fruit juice", category: "Finished Goods", bottleSize: "LARGE", qty: 110, unit: "bottles", reorder: 100, cap: 400, price: 175, updated: "2026-08-31" },
+  { name: "Mixed fruit juice", category: "Finished Goods", bottleSize: "SMALL", qty: 70, unit: "bottles", reorder: 80, cap: 300, price: 95, updated: "2026-08-31" },
+  { name: "Passion fruit juice", category: "Finished Goods", bottleSize: "LARGE", qty: 50, unit: "bottles", reorder: 100, cap: 400, price: 175, updated: "2026-08-30" },
+  { name: "Passion fruit juice", category: "Finished Goods", bottleSize: "SMALL", qty: 40, unit: "bottles", reorder: 80, cap: 300, price: 95, updated: "2026-08-30" },
 ];
 
-/* full production batch log, used by the "view all" page */
+/* full production batch log, used by the "view all" page.
+   Each row is one flavor at one bottle size; empty bottles and lids always
+   equal the bottles produced (spec §48.4). */
 export const PRODUCTION_LOG: ProductionDay[] = [
   {
-    date: "2026-08-17",
+    date: "2026-09-01",
+    /* Mango appears twice — once per bottle size. A row is one flavor at one
+       size, so a run that bottles both sizes of the same juice is two rows in
+       the same batch (spec §48.3). */
     batches: [
-      { flavor: "Mango", kg: 90, bottles: 600 },
-      { flavor: "Tamarind", kg: 60, bottles: 400 },
-      { flavor: "Soursop", kg: 36, bottles: 240 },
+      { flavor: "Mango", bottleSize: "LARGE", kg: 90, bottles: 600, emptyBottlesUsed: 600, lidsUsed: 600, labelsUsed: 600 },
+      { flavor: "Mango", bottleSize: "SMALL", kg: 45, bottles: 300, emptyBottlesUsed: 300, lidsUsed: 300, labelsUsed: 300 },
+      { flavor: "Tamarind", bottleSize: "SMALL", kg: 60, bottles: 400, emptyBottlesUsed: 400, lidsUsed: 400, labelsUsed: 400 },
+      { flavor: "Soursop", bottleSize: "LARGE", kg: 36, bottles: 240, emptyBottlesUsed: 240, lidsUsed: 240, labelsUsed: 240 },
     ],
-    bottlesUsed: 1240,
-    lidsUsed: 1240,
+    materialsUsed: [
+      { material: "Sugar", quantityUsed: 60, unit: "kg" },
+      { material: "Citric acid", quantityUsed: 4, unit: "kg" },
+    ],
     manager: "K. Ruwan",
   },
   {
-    date: "2026-08-16",
+    date: "2026-08-31",
     batches: [
-      { flavor: "Mixed fruit", kg: 75, bottles: 500 },
-      { flavor: "Mango", kg: 54, bottles: 360 },
+      { flavor: "Mixed fruit", bottleSize: "LARGE", kg: 75, bottles: 500, emptyBottlesUsed: 500, lidsUsed: 500, labelsUsed: 500 },
+      { flavor: "Mango", bottleSize: "SMALL", kg: 54, bottles: 360, emptyBottlesUsed: 360, lidsUsed: 360, labelsUsed: 360 },
     ],
-    bottlesUsed: 860,
-    lidsUsed: 860,
+    materialsUsed: [
+      { material: "Sugar", quantityUsed: 34, unit: "kg" },
+    ],
     manager: "K. Ruwan",
   },
   {
-    date: "2026-08-15",
+    date: "2026-08-30",
     batches: [
-      { flavor: "Soursop", kg: 66, bottles: 440 },
-      { flavor: "Passion fruit", kg: 21, bottles: 140 },
+      { flavor: "Soursop", bottleSize: "LARGE", kg: 66, bottles: 440, emptyBottlesUsed: 440, lidsUsed: 440, labelsUsed: 440 },
+      { flavor: "Passion fruit", bottleSize: "SMALL", kg: 21, bottles: 140, emptyBottlesUsed: 140, lidsUsed: 140, labelsUsed: 140 },
     ],
-    bottlesUsed: 580,
-    lidsUsed: 580,
+    materialsUsed: [
+      { material: "Sugar", quantityUsed: 23, unit: "kg" },
+      { material: "Citric acid", quantityUsed: 2, unit: "kg" },
+    ],
     manager: "N. Dilani",
   },
   {
+    date: "2026-08-29",
+    batches: [
+      { flavor: "Tamarind", bottleSize: "LARGE", kg: 84, bottles: 560, emptyBottlesUsed: 560, lidsUsed: 560, labelsUsed: 560 },
+    ],
+    materialsUsed: [
+      { material: "Sugar", quantityUsed: 22, unit: "kg" },
+    ],
+    manager: "K. Ruwan",
+  },
+  {
+    date: "2026-08-28",
+    batches: [
+      { flavor: "Mango", bottleSize: "LARGE", kg: 105, bottles: 700, emptyBottlesUsed: 700, lidsUsed: 700, labelsUsed: 700 },
+      { flavor: "Mixed fruit", bottleSize: "SMALL", kg: 30, bottles: 200, emptyBottlesUsed: 200, lidsUsed: 200, labelsUsed: 200 },
+    ],
+    materialsUsed: [
+      { material: "Sugar", quantityUsed: 36, unit: "kg" },
+      { material: "LPG gas", quantityUsed: 1, unit: "cylinders" },
+    ],
+    manager: "N. Dilani",
+  },
+  {
+    date: "2026-08-27",
+    batches: [
+      { flavor: "Soursop", bottleSize: "SMALL", kg: 51, bottles: 340, emptyBottlesUsed: 340, lidsUsed: 340, labelsUsed: 340 },
+    ],
+    materialsUsed: [{ material: "Sugar", quantityUsed: 14, unit: "kg" }],
+    manager: "K. Ruwan",
+  },
+  {
+    /* previous month — excluded from every month-to-date figure */
     date: "2026-08-14",
-    batches: [{ flavor: "Tamarind", kg: 84, bottles: 560 }],
-    bottlesUsed: 560,
-    lidsUsed: 560,
-    manager: "K. Ruwan",
-  },
-  {
-    date: "2026-08-13",
     batches: [
-      { flavor: "Mango", kg: 105, bottles: 700 },
-      { flavor: "Mixed fruit", kg: 30, bottles: 200 },
+      { flavor: "Mango", bottleSize: "LARGE", kg: 120, bottles: 800, emptyBottlesUsed: 800, lidsUsed: 800, labelsUsed: 800 },
     ],
-    bottlesUsed: 900,
-    lidsUsed: 900,
-    manager: "N. Dilani",
-  },
-  {
-    date: "2026-08-12",
-    batches: [{ flavor: "Soursop", kg: 51, bottles: 340 }],
-    bottlesUsed: 340,
-    lidsUsed: 340,
-    manager: "K. Ruwan",
-  },
-  {
-    date: "2026-07-30",
-    batches: [{ flavor: "Mango", kg: 120, bottles: 800 }],
-    bottlesUsed: 800,
-    lidsUsed: 800,
+    materialsUsed: [{ material: "Sugar", quantityUsed: 40, unit: "kg" }],
     manager: "K. Ruwan",
   },
 ];
@@ -175,31 +204,31 @@ export const PRODUCTION_LOG: ProductionDay[] = [
 /* operating costs — machinery/equipment purchases are tracked under Purchasing
    and deliberately excluded from this register */
 export const EXPENSES: Expense[] = [
-  { id: 1, date: "2026-08-17", category: "Electricity", description: "Factory power — August meter", amount: 18400, method: "Bank transfer" },
-  { id: 2, date: "2026-08-17", category: "Labor", description: "Production floor wages", amount: 15750, method: "Cash" },
-  { id: 3, date: "2026-08-16", category: "Fuel", description: "Delivery van diesel", amount: 8000, method: "Cash" },
-  { id: 4, date: "2026-08-15", category: "Transport", description: "Fruit collection — Gampola route", amount: 6200, method: "Cash" },
-  { id: 5, date: "2026-08-14", category: "Maintenance", description: "Bottling line servicing", amount: 12500, method: "Bank transfer" },
-  { id: 6, date: "2026-08-12", category: "Water", description: "Municipal water bill", amount: 4300, method: "Bank transfer" },
-  { id: 7, date: "2026-08-11", category: "Rent", description: "Factory unit rent", amount: 45000, method: "Bank transfer" },
-  { id: 8, date: "2026-08-09", category: "Fuel", description: "Generator diesel", amount: 5400, method: "Cash" },
-  { id: 9, date: "2026-08-05", category: "Other", description: "Packaging design revision", amount: 9000, method: "Cheque" },
-  { id: 10, date: "2026-08-03", category: "Labor", description: "Casual loading crew", amount: 7600, method: "Cash" },
-  { id: 11, date: "2026-07-29", category: "Electricity", description: "Factory power — July meter", amount: 17200, method: "Bank transfer" },
+  { id: 1, date: "2026-09-01", category: "Electricity", description: "Factory power — August meter", amount: 18400, method: "Bank transfer" },
+  { id: 2, date: "2026-09-01", category: "Labor", description: "Production floor wages", amount: 15750, method: "Cash" },
+  { id: 3, date: "2026-08-31", category: "Fuel", description: "Delivery van diesel", amount: 8000, method: "Cash" },
+  { id: 4, date: "2026-08-30", category: "Transport", description: "Fruit collection — Gampola route", amount: 6200, method: "Cash" },
+  { id: 5, date: "2026-08-29", category: "Maintenance", description: "Bottling line servicing", amount: 12500, method: "Bank transfer" },
+  { id: 6, date: "2026-08-27", category: "Water", description: "Municipal water bill", amount: 4300, method: "Bank transfer" },
+  { id: 7, date: "2026-08-26", category: "Rent", description: "Factory unit rent", amount: 45000, method: "Bank transfer" },
+  { id: 8, date: "2026-08-24", category: "Fuel", description: "Generator diesel", amount: 5400, method: "Cash" },
+  { id: 9, date: "2026-08-20", category: "Other", description: "Packaging design revision", amount: 9000, method: "Cheque" },
+  { id: 10, date: "2026-08-18", category: "Labor", description: "Casual loading crew", amount: 7600, method: "Cash" },
+  { id: 11, date: "2026-08-13", category: "Electricity", description: "Factory power — July meter", amount: 17200, method: "Bank transfer" },
 ];
 
 /* cash actually received from distributors — distinct from sales issued */
 export const INCOME_PAYMENTS: IncomePayment[] = [
-  { id: 1, date: "2026-08-17", distributor: "Kandy Beverages Co.", amount: 32100, method: "Cash", bottlesReturned: 120, reference: "RCP-0091" },
-  { id: 2, date: "2026-08-16", distributor: "Digana Retail Hub", amount: 44900, method: "Bank transfer", bottlesReturned: 180, reference: "RCP-0090" },
-  { id: 3, date: "2026-08-16", distributor: "Katugastota Traders", amount: 23450, method: "Cash", bottlesReturned: 90, reference: "RCP-0089" },
-  { id: 4, date: "2026-08-15", distributor: "Peradeniya Distributors", amount: 21400, method: "Cash", bottlesReturned: 70, reference: "RCP-0088" },
-  { id: 5, date: "2026-08-14", distributor: "Kandy Beverages Co.", amount: 18600, method: "Bank transfer", bottlesReturned: 110, reference: "RCP-0087" },
-  { id: 6, date: "2026-08-13", distributor: "Peradeniya Distributors", amount: 23200, method: "Cash", bottlesReturned: 60, reference: "RCP-0086" },
-  { id: 7, date: "2026-08-11", distributor: "Katugastota Traders", amount: 16850, method: "Cheque", bottlesReturned: 55, reference: "RCP-0085" },
-  { id: 8, date: "2026-08-10", distributor: "Gampola Agents", amount: 16000, method: "Cash", bottlesReturned: 80, reference: "RCP-0084" },
-  { id: 9, date: "2026-08-06", distributor: "Digana Retail Hub", amount: 14800, method: "Bank transfer", bottlesReturned: 40, reference: "RCP-0083" },
-  { id: 10, date: "2026-07-31", distributor: "Kandy Beverages Co.", amount: 28500, method: "Cash", bottlesReturned: 95, reference: "RCP-0082" },
+  { id: 1, date: "2026-09-01", distributor: "Kandy Beverages Co.", amount: 32100, method: "Cash", bottlesReturned: 120, reference: "RCP-0091" },
+  { id: 2, date: "2026-08-31", distributor: "Digana Retail Hub", amount: 44900, method: "Bank transfer", bottlesReturned: 180, reference: "RCP-0090" },
+  { id: 3, date: "2026-08-31", distributor: "Katugastota Traders", amount: 23450, method: "Cash", bottlesReturned: 90, reference: "RCP-0089" },
+  { id: 4, date: "2026-08-30", distributor: "Peradeniya Distributors", amount: 21400, method: "Cash", bottlesReturned: 70, reference: "RCP-0088" },
+  { id: 5, date: "2026-08-29", distributor: "Kandy Beverages Co.", amount: 18600, method: "Bank transfer", bottlesReturned: 110, reference: "RCP-0087" },
+  { id: 6, date: "2026-08-28", distributor: "Peradeniya Distributors", amount: 23200, method: "Cash", bottlesReturned: 60, reference: "RCP-0086" },
+  { id: 7, date: "2026-08-26", distributor: "Katugastota Traders", amount: 16850, method: "Cheque", bottlesReturned: 55, reference: "RCP-0085" },
+  { id: 8, date: "2026-08-25", distributor: "Gampola Agents", amount: 16000, method: "Cash", bottlesReturned: 80, reference: "RCP-0084" },
+  { id: 9, date: "2026-08-21", distributor: "Digana Retail Hub", amount: 14800, method: "Bank transfer", bottlesReturned: 40, reference: "RCP-0083" },
+  { id: 10, date: "2026-08-15", distributor: "Kandy Beverages Co.", amount: 28500, method: "Cash", bottlesReturned: 95, reference: "RCP-0082" },
 ];
 
 export const STATUS_STYLE: Record<SaleStatus, StatusStyleEntry> = {

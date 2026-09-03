@@ -25,7 +25,7 @@ export default function Topbar({ onOpenMenu }: TopbarProps) {
           Good afternoon, Sanduni
         </p>
         <p className="text-[11px] sm:text-sm mt-0.5 lg:mt-1 leading-tight" style={{ color: C.ink600 }}>
-          Monday, 17 August 2026
+          Tuesday, 1 September 2026
           <span className="hidden sm:inline"> · production floor is running Mango and Tamarind batches</span>
         </p>
       </div>

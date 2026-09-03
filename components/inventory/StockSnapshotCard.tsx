@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { INVENTORY_CATEGORIES } from "../../data/mockData";
-import { stockSnapshot, isLowStock } from "../../lib/selectors";
+import { stockSnapshot, inventoryKey, inventoryLabel, isLowStock } from "../../lib/selectors";
 import { qty as fmtQty } from "../../lib/format";
 import { C, FONT_HEAD, FONT_BODY, FONT_MONO } from "../../lib/theme";
 import { ROUTES } from "../../lib/routes";
@@ -65,10 +65,10 @@ export default function StockSnapshotCard({ state }: { state: LoadState }) {
             const low = isLowStock(item);
             const pct = Math.max(0, Math.min(100, (item.qty / item.cap) * 100));
             return (
-              <li key={`${item.category}-${item.name}`}>
+              <li key={inventoryKey(item)}>
                 <div className="flex items-center justify-between gap-3 text-xs mb-1">
                   <span className="truncate" style={{ color: C.ink700, fontWeight: 500 }}>
-                    {item.name}
+                    {inventoryLabel(item)}
                   </span>
                   <span
                     className="shrink-0"

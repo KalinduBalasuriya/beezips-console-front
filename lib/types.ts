@@ -57,6 +57,9 @@ export type InventoryCategory =
 export interface InventoryItem {
   name: string;
   category: InventoryCategory;
+  /** finished juice is stocked per bottle size, so the same flavor holds one
+   *  row per size; undefined for everything else */
+  bottleSize?: BottleSize;
   qty: number;
   unit: string;
   /** reorder threshold; qty at or below this is "low stock" */
@@ -68,18 +71,37 @@ export interface InventoryItem {
   updated: string;
 }
 
+export type BottleSize = "LARGE" | "SMALL";
+
+/** One flavor at one bottle size within a production batch (spec §48.3). */
 export interface ProductionBatch {
   flavor: string;
+  bottleSize: BottleSize;
   kg: number;
   bottles: number;
+  /** all three always equal `bottles` — a finished bottle consumes exactly one
+   *  empty bottle (of its own size), one lid and one label, so these are
+   *  auto-filled at save time and never keyed in (spec §48.4) */
+  emptyBottlesUsed: number;
+  lidsUsed: number;
+  labelsUsed: number;
+}
+
+/** A raw material consumed by a batch beyond fruit, bottles and lids (§48.6). */
+export interface MaterialUsage {
+  /** matches InventoryItem.name */
+  material: string;
+  quantityUsed: number;
+  /** denormalised from the inventory item so the row can render standalone */
+  unit: string;
 }
 
 export interface ProductionDay {
   /** ISO business date, yyyy-mm-dd */
   date: string;
   batches: ProductionBatch[];
-  bottlesUsed: number;
-  lidsUsed: number;
+  /** consumed by the batch as a whole, not per flavor (spec §48.6) */
+  materialsUsed: MaterialUsage[];
   manager: string;
 }
 
