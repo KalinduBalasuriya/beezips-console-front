@@ -8,6 +8,8 @@ interface QuickActionProps {
   label: string;
   sub: string;
   onClick: () => void;
+  /** grid placement hook, e.g. spanning both columns on a phone */
+  className?: string;
 }
 
 export default function QuickAction({
@@ -15,11 +17,12 @@ export default function QuickAction({
   label,
   sub,
   onClick,
+  className = "",
 }: QuickActionProps) {
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-2.5 rounded-xl p-3 min-h-11 text-left transition-shadow hover:shadow-sm w-full sm:gap-3 sm:rounded-2xl sm:p-4 sm:min-h-16"
+      className={`flex items-center gap-2.5 rounded-xl p-3 min-h-11 text-left transition-shadow hover:shadow-sm w-full sm:gap-3 sm:rounded-2xl sm:p-4 sm:min-h-16 ${className}`}
       style={{ background: C.card, border: `1px solid ${C.line}` }}
     >
       <HexBadge icon={icon} className="w-8 h-8 sm:w-9 sm:h-9" />

@@ -10,8 +10,11 @@ import type {
   DateRange,
   InventoryCategory,
   InventoryItem,
+  MaterialUsage,
+  ProductionBatch,
   ProductionDay,
   Sale,
+  SizeCounts,
 } from "./types";
 
 /**
@@ -20,10 +23,20 @@ import type {
  * each card.
  */
 
+/** Both sizes of a per-size count added together. */
+function bothSizes(counts: SizeCounts): number {
+  return counts.large + counts.small;
+}
+
+/** Bottles a batch row filled, across both sizes. */
+function batchBottles(batch: ProductionBatch): number {
+  return batch.large + batch.small;
+}
+
 /** SUM(produced bottles) WHERE production date is within the period. */
 export function bottlesProduced(range: DateRange): number {
   return sumInPeriod(PRODUCTION_LOG, range, (day) =>
-    day.batches.reduce((sum, b) => sum + b.bottles, 0),
+    day.batches.reduce((sum, b) => sum + batchBottles(b), 0),
   );
 }
 
@@ -79,6 +92,48 @@ export function recentSales(limit: number): Sale[] {
 /** All sales, newest first. */
 export function sortedSales(): Sale[] {
   return [...SALES].sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
+}
+
+/* ---------- one distributor ---------- */
+
+/** Everything the distributor profile states about trading so far. Lifetime
+ *  figures, not month-to-date: the profile answers "who is this account",
+ *  which no reporting period should narrow. */
+export interface DistributorSummary {
+  salesCount: number;
+  large: number;
+  small: number;
+  bottles: number;
+  totalAmount: number;
+  /** ISO date of the most recent sale, or null when they have never bought */
+  lastSale: string | null;
+}
+
+export function distributorSales(name: string): Sale[] {
+  return sortedSales().filter((s) => s.distributor === name);
+}
+
+export function distributorSummary(name: string): DistributorSummary {
+  const sales = distributorSales(name);
+  let large = 0;
+  let small = 0;
+  let totalAmount = 0;
+  for (const sale of sales) {
+    for (const item of sale.items) {
+      large += item.large;
+      small += item.small;
+    }
+    totalAmount += saleTotalAmount(sale);
+  }
+  return {
+    salesCount: sales.length,
+    large,
+    small,
+    bottles: large + small,
+    totalAmount,
+    /* sorted newest first, so the head is the latest */
+    lastSale: sales[0]?.date ?? null,
+  };
 }
 
 export function expensesInPeriod(range: DateRange) {
@@ -207,8 +262,8 @@ export interface FlavorProduction {
 /**
  * Bottles produced within the period, split by bottle size.
  *
- * Derived entirely from PRODUCTION_LOG by grouping on `bottleSize` — there is
- * no precomputed summary to fall out of step with the rows (spec §48.2).
+ * Derived entirely from PRODUCTION_LOG by reading each row's two size counts —
+ * there is no precomputed summary to fall out of step with the rows (spec §48.2).
  */
 export function bottlesProducedBySize(range: DateRange): BottlesProduced {
   let large = 0;
@@ -216,8 +271,8 @@ export function bottlesProducedBySize(range: DateRange): BottlesProduced {
   for (const day of PRODUCTION_LOG) {
     if (!isWithin(day.date, range)) continue;
     for (const batch of day.batches) {
-      if (batch.bottleSize === "LARGE") large += batch.bottles;
-      else small += batch.bottles;
+      large += batch.large;
+      small += batch.small;
     }
   }
   return { large, small, total: large + small };
@@ -233,8 +288,8 @@ export function bottlesProducedByFlavor(range: DateRange): FlavorProduction[] {
     if (!isWithin(day.date, range)) continue;
     for (const batch of day.batches) {
       const entry = totals.get(batch.flavor) ?? { flavor: batch.flavor, large: 0, small: 0 };
-      if (batch.bottleSize === "LARGE") entry.large += batch.bottles;
-      else entry.small += batch.bottles;
+      entry.large += batch.large;
+      entry.small += batch.small;
       totals.set(batch.flavor, entry);
     }
   }
@@ -248,10 +303,88 @@ export function dayConsumption(day: ProductionDay): {
   lids: number;
   labels: number;
 } {
-  const bottles = day.batches.reduce((sum, b) => sum + b.emptyBottlesUsed, 0);
-  const lids = day.batches.reduce((sum, b) => sum + b.lidsUsed, 0);
-  const labels = day.batches.reduce((sum, b) => sum + b.labelsUsed, 0);
+  const bottles = day.batches.reduce((sum, b) => sum + bothSizes(b.emptyBottlesUsed), 0);
+  const lids = day.batches.reduce((sum, b) => sum + bothSizes(b.lidsUsed), 0);
+  const labels = day.batches.reduce((sum, b) => sum + bothSizes(b.labelsUsed), 0);
   return { bottles, lids, labels };
+}
+
+/* ---------- one production day, broken down (production log table) ---------- */
+
+/** Fruit taken into one production day, grouped by flavor. */
+export interface DayFruitUsed {
+  /** kilograms across every flavor and size */
+  total: number;
+  byFlavor: { flavor: string; kg: number }[];
+}
+
+/**
+ * Fruit consumed by a single day's batches. A flavor bottled at both sizes is
+ * one row and so one entry, the fruit having been pulped before it was split
+ * across bottle sizes; the map still groups, in case a day lists a flavor twice.
+ */
+export function dayFruitUsed(day: ProductionDay): DayFruitUsed {
+  const totals = new Map<string, number>();
+  for (const batch of day.batches) {
+    totals.set(batch.flavor, (totals.get(batch.flavor) ?? 0) + batch.kg);
+  }
+  const byFlavor = [...totals.entries()]
+    .map(([flavor, kg]) => ({ flavor, kg }))
+    .sort((a, b) => b.kg - a.kg);
+  return { total: byFlavor.reduce((sum, f) => sum + f.kg, 0), byFlavor };
+}
+
+/** Bottles a single day produced, split by size. */
+export function dayBottlesBySize(day: ProductionDay): BottlesProduced {
+  let large = 0;
+  let small = 0;
+  for (const batch of day.batches) {
+    large += batch.large;
+    small += batch.small;
+  }
+  return { large, small, total: large + small };
+}
+
+/** The same day's bottles grouped by flavor then size, biggest run first. */
+export function dayBottlesByFlavor(day: ProductionDay): FlavorProduction[] {
+  const totals = new Map<string, FlavorProduction>();
+  for (const batch of day.batches) {
+    const entry = totals.get(batch.flavor) ?? { flavor: batch.flavor, large: 0, small: 0 };
+    entry.large += batch.large;
+    entry.small += batch.small;
+    totals.set(batch.flavor, entry);
+  }
+  return [...totals.values()].sort((a, b) => b.large + b.small - (a.large + a.small));
+}
+
+/**
+ * Everything other than fruit that a production day drew from stock: the
+ * packaging implied by the bottles produced (spec §48.4) followed by the
+ * materials keyed in against the batch (spec §48.6).
+ *
+ * Empty bottles are two lines because they are two inventory items — a batch
+ * draws on the stock matching the size it is bottling — while lids and labels
+ * are one item each. Names match InventoryItem.name so a reader can take this
+ * list straight to the Raw materials page. Lines that came to zero are left
+ * out rather than shown as an empty draw.
+ */
+export function dayMaterials(day: ProductionDay): MaterialUsage[] {
+  let largeBottles = 0;
+  let smallBottles = 0;
+  for (const batch of day.batches) {
+    largeBottles += batch.emptyBottlesUsed.large;
+    smallBottles += batch.emptyBottlesUsed.small;
+  }
+  const { lids, labels } = dayConsumption(day);
+
+  const packaging: MaterialUsage[] = [
+    { material: "Glass bottles (Large)", quantityUsed: largeBottles, unit: "pcs" },
+    { material: "Glass bottles (Small)", quantityUsed: smallBottles, unit: "pcs" },
+    { material: "Lids", quantityUsed: lids, unit: "pcs" },
+    { material: "Labels", quantityUsed: labels, unit: "pcs" },
+  ];
+
+  return [...packaging, ...day.materialsUsed].filter((m) => m.quantityUsed > 0);
 }
 
 /* ---------- finished juice in stock, by size and flavor ---------- */

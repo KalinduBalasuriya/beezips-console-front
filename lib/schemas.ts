@@ -1,8 +1,9 @@
 import { z } from "zod";
 import { DISTRIBUTORS } from "../data/mockData";
 import { findItem, requiredQuantities } from "./production";
+import { finishedItemName, finishedStockFor, requiredBottles } from "./issue";
 import { toISODate } from "./period";
-import type { ExpenseCategory, PaymentMethod } from "./types";
+import type { BottleSize, ExpenseCategory, PaymentMethod } from "./types";
 
 /**
  * Validation for every Quick Action form.
@@ -219,6 +220,118 @@ export const purchaseSchema = z
   });
 
 export type PurchaseInput = z.input<typeof purchaseSchema>;
+
+/* ---------- Issue stock to a distributor ---------- */
+
+/** One flavor at one bottle size: "200 Tamarind small bottles". */
+const issueRow = z.object({
+  flavor: requiredText("Choose a flavor."),
+  bottleSize: z.enum(["LARGE", "SMALL"], { message: "Choose a bottle size." }),
+  bottles: positiveCount("Enter the bottles issued."),
+});
+
+/** A per-bottle rate. Only required for a size the issue actually contains, so
+ *  it is parsed here and judged in the refinement below. Blank lands on 0,
+ *  which reads correctly for a size nobody issued and still fails the check
+ *  below for one that was. */
+const rate = z
+  .union([z.string(), z.number()])
+  .transform((v) => (typeof v === "number" ? v : v.trim() === "" ? 0 : Number(v)));
+
+export const issueSchema = z
+  .object({
+    date: businessDate,
+    distributorId: z.coerce
+      .number()
+      .refine((id) => DISTRIBUTORS.some((d) => d.id === id), "Choose a distributor."),
+    rows: z.array(issueRow),
+    largePrice: rate,
+    smallPrice: rate,
+    notes: z.string().optional(),
+  })
+  .superRefine((issue, ctx) => {
+    /* whole-form rather than field-level: with no rows there is no row for the
+       message to sit under */
+    if (issue.rows.length === 0) {
+      ctx.addIssue({ code: "custom", message: "Add at least one flavor." });
+    }
+
+    /* the same flavor at the same size twice would double-count the issue */
+    const seen = new Set<string>();
+    issue.rows.forEach((row, index) => {
+      const key = `${row.flavor}__${row.bottleSize}`;
+      if (seen.has(key)) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["rows", index, "flavor"],
+          message: `${row.flavor} (${row.bottleSize === "LARGE" ? "Large" : "Small"}) is already listed — combine the rows.`,
+        });
+      }
+      seen.add(key);
+    });
+
+    const sizes = [
+      {
+        size: "LARGE" as BottleSize,
+        /* mid-sentence and parenthetical forms: "per large bottle" reads one
+           way, "Mango juice (Large)" the way Inventory labels it */
+        label: "large",
+        sizeLabel: "Large",
+        rate: issue.largePrice,
+        ratePath: "largePrice",
+      },
+      {
+        size: "SMALL" as BottleSize,
+        label: "small",
+        sizeLabel: "Small",
+        rate: issue.smallPrice,
+        ratePath: "smallPrice",
+      },
+    ];
+
+    for (const group of sizes) {
+      /* an issue of small bottles alone is complete without a large rate */
+      const required = requiredBottles(
+        issue.rows.map((r) => ({
+          flavor: r.flavor,
+          bottleSize: r.bottleSize,
+          bottles: String(r.bottles),
+        })),
+        group.size,
+      );
+      if (required.size === 0) continue;
+
+      /* the rate is per size, so one blank rate invalidates every row of it */
+      if (!(Number.isFinite(group.rate) && group.rate > 0)) {
+        ctx.addIssue({
+          code: "custom",
+          path: [group.ratePath],
+          message: `Enter the rate per ${group.label} bottle.`,
+        });
+      }
+
+      /* stock check — you cannot issue bottles that were never bottled */
+      for (const [flavor, needed] of required) {
+        if (needed <= 0) continue;
+        const item = finishedStockFor(flavor, group.size);
+        if (!item) {
+          ctx.addIssue({
+            code: "custom",
+            message: `${finishedItemName(flavor)} (${group.sizeLabel}) is not in the inventory register.`,
+          });
+          continue;
+        }
+        if (needed > item.qty) {
+          ctx.addIssue({
+            code: "custom",
+            message: `Not enough ${item.name} (${group.sizeLabel}): ${needed.toLocaleString()} bottles needed, ${item.qty.toLocaleString()} in stock.`,
+          });
+        }
+      }
+    }
+  });
+
+export type IssueInput = z.input<typeof issueSchema>;
 
 /* ---------- turning a ZodError into something a form can render ---------- */
 

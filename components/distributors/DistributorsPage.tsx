@@ -127,7 +127,7 @@ export default function DistributorsPage() {
                         <td className="px-5 py-3 text-right">
                           <Link
                             href={distributorRoute(d.name)}
-                            aria-label={`View sales for ${d.name}`}
+                            aria-label={`View ${d.name}`}
                             className="inline-flex items-center justify-center rounded-lg h-8 w-8"
                             style={{ border: `1px solid ${C.line}` }}
                           >

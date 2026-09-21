@@ -6,9 +6,7 @@ import { sortedSales } from "../../lib/selectors";
 import { C, FONT_BODY } from "../../lib/theme";
 import PageHeader from "../ui/PageHeader";
 import Pagination from "../ui/Pagination";
-import FlavorPopup from "../modals/FlavorPopup";
 import SalesTable from "./SalesTable";
-import type { Sale } from "../../lib/types";
 
 /** records per page on the full Sales & Distribution list */
 const PAGE_SIZE = 6;
@@ -16,7 +14,6 @@ const PAGE_SIZE = 6;
 export default function SalesListPage() {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
-  const [flavorSale, setFlavorSale] = useState<Sale | null>(null);
 
   const rows = useMemo(
     () => sortedSales().filter((s) => s.distributor.toLowerCase().includes(query.toLowerCase())),
@@ -61,7 +58,6 @@ export default function SalesListPage() {
 
       <SalesTable
         sales={pageRows}
-        onViewFlavors={setFlavorSale}
         showStatus
         emptyMessage={query ? "No sales match your search." : "No sales or distribution records yet."}
       />
@@ -75,8 +71,6 @@ export default function SalesListPage() {
         total={rows.length}
         noun="sales"
       />
-
-      {flavorSale && <FlavorPopup sale={flavorSale} onClose={() => setFlavorSale(null)} />}
     </div>
   );
 }

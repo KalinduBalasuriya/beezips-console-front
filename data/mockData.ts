@@ -58,11 +58,11 @@ export const INVENTORY_CATEGORIES: InventoryCategory[] = [
 ];
 
 export const DISTRIBUTORS: Distributor[] = [
-  { id: 1, name: "Kandy Beverages Co.", balance: 0 },
-  { id: 2, name: "Peradeniya Distributors", balance: -4500 },
-  { id: 3, name: "Digana Retail Hub", balance: 0 },
-  { id: 4, name: "Katugastota Traders", balance: 1200 },
-  { id: 5, name: "Gampola Agents", balance: -6000 },
+  { id: 1, name: "Kandy Beverages Co.", joined: "2024-02-14", balance: 0 },
+  { id: 2, name: "Peradeniya Distributors", joined: "2024-06-03", balance: -4500 },
+  { id: 3, name: "Digana Retail Hub", joined: "2025-01-20", balance: 0 },
+  { id: 4, name: "Katugastota Traders", joined: "2025-08-11", balance: 1200 },
+  { id: 5, name: "Gampola Agents", joined: "2026-03-02", balance: -6000 },
 ];
 
 /* each sale is broken into flavor line items, each with large/small bottle
@@ -117,19 +117,17 @@ export const INVENTORY: InventoryItem[] = [
 ];
 
 /* full production batch log, used by the "view all" page.
-   Each row is one flavor at one bottle size; empty bottles and lids always
-   equal the bottles produced (spec §48.4). */
+   Each row is one flavor, holding both bottle sizes; empty bottles, lids and
+   labels always equal the bottles filled at that size (spec §48.4). */
 export const PRODUCTION_LOG: ProductionDay[] = [
   {
     date: "2026-09-01",
-    /* Mango appears twice — once per bottle size. A row is one flavor at one
-       size, so a run that bottles both sizes of the same juice is two rows in
-       the same batch (spec §48.3). */
+    /* Mango is one row carrying both sizes — 600 large and 300 small off 135 kg
+       of fruit, pulped once and split at the filler (spec §48.3). */
     batches: [
-      { flavor: "Mango", bottleSize: "LARGE", kg: 90, bottles: 600, emptyBottlesUsed: 600, lidsUsed: 600, labelsUsed: 600 },
-      { flavor: "Mango", bottleSize: "SMALL", kg: 45, bottles: 300, emptyBottlesUsed: 300, lidsUsed: 300, labelsUsed: 300 },
-      { flavor: "Tamarind", bottleSize: "SMALL", kg: 60, bottles: 400, emptyBottlesUsed: 400, lidsUsed: 400, labelsUsed: 400 },
-      { flavor: "Soursop", bottleSize: "LARGE", kg: 36, bottles: 240, emptyBottlesUsed: 240, lidsUsed: 240, labelsUsed: 240 },
+      { flavor: "Mango", kg: 135, large: 600, small: 300, emptyBottlesUsed: { large: 600, small: 300 }, lidsUsed: { large: 600, small: 300 }, labelsUsed: { large: 600, small: 300 } },
+      { flavor: "Tamarind", kg: 60, large: 0, small: 400, emptyBottlesUsed: { large: 0, small: 400 }, lidsUsed: { large: 0, small: 400 }, labelsUsed: { large: 0, small: 400 } },
+      { flavor: "Soursop", kg: 36, large: 240, small: 0, emptyBottlesUsed: { large: 240, small: 0 }, lidsUsed: { large: 240, small: 0 }, labelsUsed: { large: 240, small: 0 } },
     ],
     materialsUsed: [
       { material: "Sugar", quantityUsed: 60, unit: "kg" },
@@ -140,8 +138,8 @@ export const PRODUCTION_LOG: ProductionDay[] = [
   {
     date: "2026-08-31",
     batches: [
-      { flavor: "Mixed fruit", bottleSize: "LARGE", kg: 75, bottles: 500, emptyBottlesUsed: 500, lidsUsed: 500, labelsUsed: 500 },
-      { flavor: "Mango", bottleSize: "SMALL", kg: 54, bottles: 360, emptyBottlesUsed: 360, lidsUsed: 360, labelsUsed: 360 },
+      { flavor: "Mixed fruit", kg: 75, large: 500, small: 0, emptyBottlesUsed: { large: 500, small: 0 }, lidsUsed: { large: 500, small: 0 }, labelsUsed: { large: 500, small: 0 } },
+      { flavor: "Mango", kg: 54, large: 0, small: 360, emptyBottlesUsed: { large: 0, small: 360 }, lidsUsed: { large: 0, small: 360 }, labelsUsed: { large: 0, small: 360 } },
     ],
     materialsUsed: [
       { material: "Sugar", quantityUsed: 34, unit: "kg" },
@@ -151,8 +149,8 @@ export const PRODUCTION_LOG: ProductionDay[] = [
   {
     date: "2026-08-30",
     batches: [
-      { flavor: "Soursop", bottleSize: "LARGE", kg: 66, bottles: 440, emptyBottlesUsed: 440, lidsUsed: 440, labelsUsed: 440 },
-      { flavor: "Passion fruit", bottleSize: "SMALL", kg: 21, bottles: 140, emptyBottlesUsed: 140, lidsUsed: 140, labelsUsed: 140 },
+      { flavor: "Soursop", kg: 66, large: 440, small: 0, emptyBottlesUsed: { large: 440, small: 0 }, lidsUsed: { large: 440, small: 0 }, labelsUsed: { large: 440, small: 0 } },
+      { flavor: "Passion fruit", kg: 21, large: 0, small: 140, emptyBottlesUsed: { large: 0, small: 140 }, lidsUsed: { large: 0, small: 140 }, labelsUsed: { large: 0, small: 140 } },
     ],
     materialsUsed: [
       { material: "Sugar", quantityUsed: 23, unit: "kg" },
@@ -163,7 +161,7 @@ export const PRODUCTION_LOG: ProductionDay[] = [
   {
     date: "2026-08-29",
     batches: [
-      { flavor: "Tamarind", bottleSize: "LARGE", kg: 84, bottles: 560, emptyBottlesUsed: 560, lidsUsed: 560, labelsUsed: 560 },
+      { flavor: "Tamarind", kg: 84, large: 560, small: 0, emptyBottlesUsed: { large: 560, small: 0 }, lidsUsed: { large: 560, small: 0 }, labelsUsed: { large: 560, small: 0 } },
     ],
     materialsUsed: [
       { material: "Sugar", quantityUsed: 22, unit: "kg" },
@@ -173,8 +171,8 @@ export const PRODUCTION_LOG: ProductionDay[] = [
   {
     date: "2026-08-28",
     batches: [
-      { flavor: "Mango", bottleSize: "LARGE", kg: 105, bottles: 700, emptyBottlesUsed: 700, lidsUsed: 700, labelsUsed: 700 },
-      { flavor: "Mixed fruit", bottleSize: "SMALL", kg: 30, bottles: 200, emptyBottlesUsed: 200, lidsUsed: 200, labelsUsed: 200 },
+      { flavor: "Mango", kg: 105, large: 700, small: 0, emptyBottlesUsed: { large: 700, small: 0 }, lidsUsed: { large: 700, small: 0 }, labelsUsed: { large: 700, small: 0 } },
+      { flavor: "Mixed fruit", kg: 30, large: 0, small: 200, emptyBottlesUsed: { large: 0, small: 200 }, lidsUsed: { large: 0, small: 200 }, labelsUsed: { large: 0, small: 200 } },
     ],
     materialsUsed: [
       { material: "Sugar", quantityUsed: 36, unit: "kg" },
@@ -185,7 +183,7 @@ export const PRODUCTION_LOG: ProductionDay[] = [
   {
     date: "2026-08-27",
     batches: [
-      { flavor: "Soursop", bottleSize: "SMALL", kg: 51, bottles: 340, emptyBottlesUsed: 340, lidsUsed: 340, labelsUsed: 340 },
+      { flavor: "Soursop", kg: 51, large: 0, small: 340, emptyBottlesUsed: { large: 0, small: 340 }, lidsUsed: { large: 0, small: 340 }, labelsUsed: { large: 0, small: 340 } },
     ],
     materialsUsed: [{ material: "Sugar", quantityUsed: 14, unit: "kg" }],
     manager: "K. Ruwan",
@@ -194,7 +192,7 @@ export const PRODUCTION_LOG: ProductionDay[] = [
     /* previous month — excluded from every month-to-date figure */
     date: "2026-08-14",
     batches: [
-      { flavor: "Mango", bottleSize: "LARGE", kg: 120, bottles: 800, emptyBottlesUsed: 800, lidsUsed: 800, labelsUsed: 800 },
+      { flavor: "Mango", kg: 120, large: 800, small: 0, emptyBottlesUsed: { large: 800, small: 0 }, lidsUsed: { large: 800, small: 0 }, labelsUsed: { large: 800, small: 0 } },
     ],
     materialsUsed: [{ material: "Sugar", quantityUsed: 40, unit: "kg" }],
     manager: "K. Ruwan",

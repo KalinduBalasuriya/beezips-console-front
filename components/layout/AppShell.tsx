@@ -1,12 +1,19 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+} from "react";
 import type { ReactNode } from "react";
 import { C, FONT_BODY } from "../../lib/theme";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
 import PurchaseForm from "../modals/PurchaseForm";
 import ProductionForm from "../modals/ProductionForm";
+import IssueStockForm from "../modals/IssueStockForm";
 import ExpenseForm from "../modals/ExpenseForm";
 import IncomeForm from "../modals/IncomeForm";
 import Toast from "../ui/Toast";
@@ -51,11 +58,20 @@ export default function AppShell({ children }: { children: ReactNode }) {
     setTimeout(() => setToast(""), 2600);
   }, []);
 
-  const controls = useMemo<ModalControls>(() => ({ open: (m) => setModal(m) }), []);
+  const controls = useMemo<ModalControls>(
+    () => ({ open: (m) => setModal(m) }),
+    [],
+  );
 
   return (
     <ModalContext.Provider value={controls}>
-      <div style={{ background: C.surface, minHeight: "100vh", fontFamily: FONT_BODY }}>
+      <div
+        style={{
+          background: C.surface,
+          minHeight: "100vh",
+          fontFamily: FONT_BODY,
+        }}
+      >
         <div className="flex">
           <Sidebar open={menuOpen} onClose={() => setMenuOpen(false)} />
 
@@ -66,16 +82,34 @@ export default function AppShell({ children }: { children: ReactNode }) {
         </div>
 
         {modal === "purchase" && (
-          <PurchaseForm onClose={closeModal} onSaved={() => save("Purchase saved and stock updated")} />
+          <PurchaseForm
+            onClose={closeModal}
+            onSaved={() => save("Purchase saved and stock updated")}
+          />
         )}
         {modal === "production" && (
-          <ProductionForm onClose={closeModal} onSaved={() => save("Production batch saved")} />
+          <ProductionForm
+            onClose={closeModal}
+            onSaved={() => save("Production batch saved")}
+          />
+        )}
+        {modal === "issue" && (
+          <IssueStockForm
+            onClose={closeModal}
+            onSaved={() => save("Stock issued to distributor")}
+          />
         )}
         {modal === "expense" && (
-          <ExpenseForm onClose={closeModal} onSaved={() => save("Expense recorded")} />
+          <ExpenseForm
+            onClose={closeModal}
+            onSaved={() => save("Expense recorded")}
+          />
         )}
         {modal === "income" && (
-          <IncomeForm onClose={closeModal} onSaved={() => save("Payment recorded")} />
+          <IncomeForm
+            onClose={closeModal}
+            onSaved={() => save("Payment recorded")}
+          />
         )}
 
         <Toast message={toast} />

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import DistributorProfilePage from "../../../../components/distributors/DistributorProfilePage";
+import DistributorSalesPage from "../../../../../components/sales/DistributorSalesPage";
 
 interface PageProps {
   /** dynamic segments arrive as a promise in this version of Next */
@@ -8,10 +8,10 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { name } = await params;
-  return { title: `Beezips | ${decodeURIComponent(name)}` };
+  return { title: `Beezips | ${decodeURIComponent(name)} sales` };
 }
 
 export default async function Page({ params }: PageProps) {
   const { name } = await params;
-  return <DistributorProfilePage distributorName={decodeURIComponent(name)} />;
+  return <DistributorSalesPage distributorName={decodeURIComponent(name)} />;
 }

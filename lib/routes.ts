@@ -17,9 +17,16 @@ export const ROUTES = {
   reports: "/reports",
 } as const;
 
-/** Detail route for one distributor's sales history. */
+/** Profile route for one distributor: who they are, what they owe, what they
+ *  have bought in total. */
 export function distributorRoute(name: string): string {
   return `${ROUTES.distributors}/${encodeURIComponent(name)}`;
+}
+
+/** That distributor's sales history — reached from "View sales" on the
+ *  profile, rather than directly from a distributor's name. */
+export function distributorSalesRoute(name: string): string {
+  return `${distributorRoute(name)}/sales`;
 }
 
 /** True when `pathname` is `href` or one of its nested routes. */

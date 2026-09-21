@@ -12,6 +12,8 @@ export interface NavItem {
 export interface Distributor {
   id: number;
   name: string;
+  /** ISO business date this distributor was taken on, yyyy-mm-dd */
+  joined: string;
   /** negative = distributor owes us (Due), positive = they overpaid (Exceed), 0 = settled */
   balance: number;
 }
@@ -73,18 +75,34 @@ export interface InventoryItem {
 
 export type BottleSize = "LARGE" | "SMALL";
 
-/** One flavor at one bottle size within a production batch (spec §48.3). */
+/** A figure held per bottle size — the shape every per-size count on a
+ *  production batch takes. */
+export interface SizeCounts {
+  large: number;
+  small: number;
+}
+
+/**
+ * One flavor within a production batch, carrying both bottle sizes (spec §48.3).
+ *
+ * A run that bottles the same juice at both sizes is a single row: the fruit is
+ * pulped before it is split across sizes, so `kg` is one figure for the flavor
+ * while the bottles are counted per size.
+ */
 export interface ProductionBatch {
   flavor: string;
-  bottleSize: BottleSize;
+  /** fruit pulped for this flavor, across both sizes */
   kg: number;
-  bottles: number;
-  /** all three always equal `bottles` — a finished bottle consumes exactly one
-   *  empty bottle (of its own size), one lid and one label, so these are
+  /** large bottles filled; 0 when the run bottled small only */
+  large: number;
+  /** small bottles filled; 0 when the run bottled large only */
+  small: number;
+  /** each mirrors `large`/`small` — a finished bottle consumes exactly one
+   *  empty bottle of its own size, one lid and one label, so all three are
    *  auto-filled at save time and never keyed in (spec §48.4) */
-  emptyBottlesUsed: number;
-  lidsUsed: number;
-  labelsUsed: number;
+  emptyBottlesUsed: SizeCounts;
+  lidsUsed: SizeCounts;
+  labelsUsed: SizeCounts;
 }
 
 /** A raw material consumed by a batch beyond fruit, bottles and lids (§48.6). */
@@ -145,7 +163,13 @@ export interface StatusStyleEntry {
   fg: string;
 }
 
-export type ModalType = "purchase" | "production" | "expense" | "income" | null;
+export type ModalType =
+  | "purchase"
+  | "production"
+  | "issue"
+  | "expense"
+  | "income"
+  | null;
 
 /** Inclusive ISO date range, e.g. month-to-date. */
 export interface DateRange {
