@@ -2,7 +2,6 @@
 
 import StatCardsRow from "./StatCardsRow";
 import QuickActionsRow from "./QuickActionsRow";
-import RecentSalesCard from "../sales/RecentSalesCard";
 import StockSnapshotCard from "../inventory/StockSnapshotCard";
 import { ErrorState } from "../ui/States";
 import { useDashboardData } from "../../lib/useDashboardData";
@@ -23,12 +22,7 @@ export default function DashboardHome() {
           <StatCardsRow range={range} state={state} />
           <QuickActionsRow />
 
-          {/* recent sales gets the full content width at every breakpoint, with
-              the stock snapshot stacked underneath it */}
-          <div className="space-y-5">
-            <RecentSalesCard state={state} />
-            <StockSnapshotCard state={state} />
-          </div>
+          <StockSnapshotCard state={state} />
         </>
       )}
     </div>
