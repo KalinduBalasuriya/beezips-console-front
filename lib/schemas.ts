@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { DISTRIBUTORS } from "../data/mockData";
 import { findItem, requiredQuantities } from "./production";
-import { finishedItemName, finishedStockFor, requiredBottles } from "./issue";
+import { bottlesByFlavor, finishedItemName, finishedStockFor } from "./issue";
 import { toISODate } from "./period";
 import type { BottleSize, ExpenseCategory, PaymentMethod } from "./types";
 
@@ -63,13 +63,6 @@ const positiveNumber = (message: string) =>
 const positiveCount = (message: string) =>
   positiveNumber(message).refine(Number.isInteger, "Enter a whole number.");
 
-/** An optional count that defaults to zero when left blank. */
-const optionalCount = (message: string) =>
-  z
-    .union([z.string(), z.number()])
-    .transform((v) => (typeof v === "number" ? v : v.trim() === "" ? 0 : Number(v)))
-    .refine((n) => Number.isFinite(n) && n >= 0 && Number.isInteger(n), message);
-
 const requiredText = (message: string) => z.string().trim().min(1, message);
 
 /** A business date: present, well formed, and never in the future — the
@@ -80,6 +73,33 @@ const businessDate = z
   .min(1, "Choose a date.")
   .regex(/^\d{4}-\d{2}-\d{2}$/, "Enter a valid date.")
   .refine((v) => v <= toISODate(new Date()), "The date cannot be in the future.");
+
+/* ---------- bottle lines, shared by Issue Stock and Record Payment ---------- */
+
+/** One flavor at one bottle size: "200 Tamarind small bottles". Both forms
+ *  describe their quantities this way, going out and coming back. */
+const bottleLine = (message: string) =>
+  z.object({
+    flavor: requiredText("Choose a flavor."),
+    bottleSize: z.enum(["LARGE", "SMALL"], { message: "Choose a bottle size." }),
+    bottles: positiveCount(message),
+  });
+
+/** A per-bottle rate. Only required for a size the form actually contains, so
+ *  it is parsed here and judged in each schema's refinement. Blank lands on 0,
+ *  which reads correctly for a size with no lines and still fails the check for
+ *  one that has them. */
+const rate = z
+  .union([z.string(), z.number()])
+  .transform((v) => (typeof v === "number" ? v : v.trim() === "" ? 0 : Number(v)));
+
+/** The two sizes, with the wording each message needs. `label` reads
+ *  mid-sentence ("per large bottle"), `sizeLabel` in parentheses ("(Large)")
+ *  the way Inventory labels a row. */
+const SIZE_RULES = [
+  { size: "LARGE" as BottleSize, label: "large", sizeLabel: "Large", rateKey: "largePrice" },
+  { size: "SMALL" as BottleSize, label: "small", sizeLabel: "Small", rateKey: "smallPrice" },
+] as const;
 
 /* ---------- Add production ---------- */
 
@@ -180,17 +200,56 @@ export type ExpenseInput = z.input<typeof expenseSchema>;
 
 /* ---------- Record distributor payment ---------- */
 
-export const incomeSchema = z.object({
-  date: businessDate,
-  distributorId: z.coerce
-    .number()
-    .refine((id) => DISTRIBUTORS.some((d) => d.id === id), "Choose a distributor."),
-  amount: positiveNumber("Enter the amount received."),
-  bottlesReturned: optionalCount("Returned bottles must be a whole number, or blank."),
-  method: z.enum(PAYMENT_METHODS, { message: "Choose a payment method." }),
-  reference: z.string().optional(),
-  notes: z.string().optional(),
-});
+/**
+ * A payment settles for stock already taken, and the bottles that came back
+ * with it are recorded here — per flavor and size, credited at a rate per size.
+ * Returns are optional: a distributor may arrive with money and nothing else.
+ */
+export const incomeSchema = z
+  .object({
+    date: businessDate,
+    distributorId: z.coerce
+      .number()
+      .refine((id) => DISTRIBUTORS.some((d) => d.id === id), "Choose a distributor."),
+    amount: positiveNumber("Enter the amount received."),
+    returns: z.array(bottleLine("Enter the bottles returned.")),
+    largePrice: rate,
+    smallPrice: rate,
+    method: z.enum(PAYMENT_METHODS, { message: "Choose a payment method." }),
+    reference: z.string().optional(),
+    notes: z.string().optional(),
+  })
+  .superRefine((payment, ctx) => {
+    /* the same flavor at the same size twice would double-count the credit */
+    const seen = new Set<string>();
+    payment.returns.forEach((line, index) => {
+      const key = `${line.flavor}__${line.bottleSize}`;
+      if (seen.has(key)) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["returns", index, "flavor"],
+          message: `${line.flavor} (${line.bottleSize === "LARGE" ? "Large" : "Small"}) is already listed — combine the rows.`,
+        });
+      }
+      seen.add(key);
+    });
+
+    /* the rate is per size, so one blank rate invalidates every line of it.
+       What a distributor is holding is deliberately not checked: bottles come
+       back before the paperwork catches up, and staff must be able to record
+       what physically arrived. */
+    for (const group of SIZE_RULES) {
+      if (!payment.returns.some((line) => line.bottleSize === group.size)) continue;
+
+      if (!(Number.isFinite(payment[group.rateKey]) && payment[group.rateKey] > 0)) {
+        ctx.addIssue({
+          code: "custom",
+          path: [group.rateKey],
+          message: `Enter the rate per ${group.label} bottle.`,
+        });
+      }
+    }
+  });
 
 export type IncomeInput = z.input<typeof incomeSchema>;
 
@@ -223,28 +282,13 @@ export type PurchaseInput = z.input<typeof purchaseSchema>;
 
 /* ---------- Issue stock to a distributor ---------- */
 
-/** One flavor at one bottle size: "200 Tamarind small bottles". */
-const issueRow = z.object({
-  flavor: requiredText("Choose a flavor."),
-  bottleSize: z.enum(["LARGE", "SMALL"], { message: "Choose a bottle size." }),
-  bottles: positiveCount("Enter the bottles issued."),
-});
-
-/** A per-bottle rate. Only required for a size the issue actually contains, so
- *  it is parsed here and judged in the refinement below. Blank lands on 0,
- *  which reads correctly for a size nobody issued and still fails the check
- *  below for one that was. */
-const rate = z
-  .union([z.string(), z.number()])
-  .transform((v) => (typeof v === "number" ? v : v.trim() === "" ? 0 : Number(v)));
-
 export const issueSchema = z
   .object({
     date: businessDate,
     distributorId: z.coerce
       .number()
       .refine((id) => DISTRIBUTORS.some((d) => d.id === id), "Choose a distributor."),
-    rows: z.array(issueRow),
+    rows: z.array(bottleLine("Enter the bottles issued.")),
     largePrice: rate,
     smallPrice: rate,
     notes: z.string().optional(),
@@ -270,28 +314,9 @@ export const issueSchema = z
       seen.add(key);
     });
 
-    const sizes = [
-      {
-        size: "LARGE" as BottleSize,
-        /* mid-sentence and parenthetical forms: "per large bottle" reads one
-           way, "Mango juice (Large)" the way Inventory labels it */
-        label: "large",
-        sizeLabel: "Large",
-        rate: issue.largePrice,
-        ratePath: "largePrice",
-      },
-      {
-        size: "SMALL" as BottleSize,
-        label: "small",
-        sizeLabel: "Small",
-        rate: issue.smallPrice,
-        ratePath: "smallPrice",
-      },
-    ];
-
-    for (const group of sizes) {
+    for (const group of SIZE_RULES) {
       /* an issue of small bottles alone is complete without a large rate */
-      const required = requiredBottles(
+      const required = bottlesByFlavor(
         issue.rows.map((r) => ({
           flavor: r.flavor,
           bottleSize: r.bottleSize,
@@ -302,10 +327,10 @@ export const issueSchema = z
       if (required.size === 0) continue;
 
       /* the rate is per size, so one blank rate invalidates every row of it */
-      if (!(Number.isFinite(group.rate) && group.rate > 0)) {
+      if (!(Number.isFinite(issue[group.rateKey]) && issue[group.rateKey] > 0)) {
         ctx.addIssue({
           code: "custom",
-          path: [group.ratePath],
+          path: [group.rateKey],
           message: `Enter the rate per ${group.label} bottle.`,
         });
       }

@@ -9,13 +9,19 @@ export interface NavItem {
   children?: NavItem[];
 }
 
+/**
+ * A distributor account.
+ *
+ * What they owe is deliberately absent: stock goes out unpaid, money and empty
+ * bottles come back later, so the balance is the sum of those records rather
+ * than a figure kept alongside them. distributorTrade() in lib/selectors.ts
+ * derives it, and nothing can drift out of step with the ledger.
+ */
 export interface Distributor {
   id: number;
   name: string;
   /** ISO business date this distributor was taken on, yyyy-mm-dd */
   joined: string;
-  /** negative = distributor owes us (Due), positive = they overpaid (Exceed), 0 = settled */
-  balance: number;
 }
 
 export interface SaleItem {
@@ -145,7 +151,15 @@ export interface Expense {
   method: PaymentMethod;
 }
 
-/** Cash actually received from a distributor — distinct from sales issued. */
+/**
+ * Cash actually received from a distributor — distinct from sales issued.
+ *
+ * A distributor takes stock one day and settles later, bringing unsold bottles
+ * back with the money. Those bottles are recorded here, per flavor and size,
+ * and come off what they were issued: 500 small taken less 50 returned is 450
+ * actually sold. They are credited at the rate they were charged, so the
+ * payment carries its own prices the same way a sale does.
+ */
 export interface IncomePayment {
   id: number;
   /** ISO business date, yyyy-mm-dd */
@@ -153,8 +167,12 @@ export interface IncomePayment {
   distributor: string;
   amount: number;
   method: PaymentMethod;
-  /** empty bottles returned with the payment */
-  bottlesReturned: number;
+  /** bottles brought back with the payment, per flavor and size */
+  returns: SaleItem[];
+  /** rate each returned large bottle is credited at */
+  largePrice: number;
+  /** rate each returned small bottle is credited at */
+  smallPrice: number;
   reference?: string;
 }
 

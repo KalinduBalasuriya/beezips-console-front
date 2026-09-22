@@ -6,18 +6,17 @@ import { HandCoins, Plus } from "lucide-react";
 import { INCOME_PAYMENTS } from "../../data/mockData";
 import { cashCollected } from "../../lib/selectors";
 import { monthToDate, periodLabel, isWithin } from "../../lib/period";
-import { money, qty as fmtQty, shortDate } from "../../lib/format";
+import { money, shortDate } from "../../lib/format";
 import { C, FONT_BODY, FONT_MONO } from "../../lib/theme";
 import PageHeader from "../ui/PageHeader";
 import Pagination from "../ui/Pagination";
 import { EmptyState } from "../ui/States";
+import ReturnedBottlesCell from "../sales/ReturnedBottlesCell";
 import PeriodToggle from "./PeriodToggle";
 import { useModals } from "../layout/AppShell";
 import { distributorRoute } from "../../lib/routes";
 
 const PAGE_SIZE = 8;
-
-
 
 /** Cash actually received from distributors — the source of the dashboard's
  *  Cash Collected figure. */
@@ -104,10 +103,14 @@ export default function IncomePage() {
                   {shortDate(p.date)} · {p.method}
                   {p.reference ? ` · ${p.reference}` : ""}
                 </p>
-                <p className="text-[11px] mt-1" style={{ color: C.ink600 }}>
-                  Bottles returned{" "}
-                  <span style={{ fontFamily: FONT_MONO, color: C.ink900 }}>{fmtQty(p.bottlesReturned)}</span>
-                </p>
+                {/* a div, not a p: the breakdown trigger renders a block
+                    element, which no paragraph may contain */}
+                <div
+                  className="text-[11px] mt-1 flex items-center gap-1.5"
+                  style={{ color: C.ink600 }}
+                >
+                  Bottles returned <ReturnedBottlesCell payment={p} dense />
+                </div>
               </div>
             ))}
           </div>
@@ -152,8 +155,8 @@ export default function IncomePage() {
                       <td className="px-5 py-3" style={{ fontFamily: FONT_MONO, color: C.ink600 }}>
                         {p.reference ?? "—"}
                       </td>
-                      <td className="px-5 py-3" style={{ fontFamily: FONT_MONO, color: C.ink600 }}>
-                        {fmtQty(p.bottlesReturned)}
+                      <td className="px-5 py-3" style={{ color: C.ink600 }}>
+                        <ReturnedBottlesCell payment={p} />
                       </td>
                       <td
                         className="px-5 py-3 text-right font-medium whitespace-nowrap"

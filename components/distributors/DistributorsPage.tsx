@@ -1,27 +1,24 @@
 import Link from "next/link";
 import { Users, ChevronRight } from "lucide-react";
-import { DISTRIBUTORS, SALES } from "../../data/mockData";
-import { saleTotals } from "../../lib/salesUtils";
+import { DISTRIBUTORS } from "../../data/mockData";
+import { distributorTrade } from "../../lib/selectors";
 import { distributorRoute } from "../../lib/routes";
 import { money } from "../../lib/format";
 import { C, FONT_BODY, FONT_MONO } from "../../lib/theme";
 import PageHeader from "../ui/PageHeader";
+import BalancePill from "../ui/BalancePill";
 import { EmptyState } from "../ui/States";
 
-/** Balance presentation shared by the card and table layouts. */
-function balanceTone(balance: number) {
-  if (balance < 0) return { bg: C.dangerBg, fg: C.danger, label: `Due ${money(-balance)}` };
-  if (balance > 0) return { bg: C.infoBg, fg: C.info, label: `Exceed ${money(balance)}` };
-  return { bg: C.successBg, fg: C.success, label: "Settled" };
-}
-
 export default function DistributorsPage() {
+  /* the ledger answers both columns: what they have bought net of returns, and
+     where the account stands once their payments are counted */
   const rows = DISTRIBUTORS.map((d) => {
-    const sales = SALES.filter((s) => s.distributor === d.name);
+    const trade = distributorTrade(d.name);
     return {
       ...d,
-      salesCount: sales.length,
-      totalValue: sales.reduce((sum, s) => sum + saleTotals(s).totalAmt, 0),
+      salesCount: trade.issues,
+      totalValue: trade.netAmount,
+      balance: trade.balance,
     };
   });
 
@@ -42,7 +39,6 @@ export default function DistributorsPage() {
           {/* mobile / tablet: one card per distributor */}
           <div className="md:hidden space-y-2.5">
             {rows.map((d) => {
-              const tone = balanceTone(d.balance);
               return (
                 <Link
                   key={d.id}
@@ -54,12 +50,7 @@ export default function DistributorsPage() {
                     <span className="text-[13px] font-semibold leading-tight" style={{ color: C.brandInk }}>
                       {d.name}
                     </span>
-                    <span
-                      className="rounded-full px-2 py-0.5 text-[11px] font-semibold shrink-0 whitespace-nowrap"
-                      style={{ background: tone.bg, color: tone.fg }}
-                    >
-                      {tone.label}
-                    </span>
+                    <BalancePill balance={d.balance} dense />
                   </div>
                   <div className="mt-2 pt-2 flex items-center justify-between gap-2" style={{ borderTop: `1px solid ${C.line}` }}>
                     <span className="text-[11px]" style={{ color: C.ink400 }}>
@@ -95,7 +86,6 @@ export default function DistributorsPage() {
                 </thead>
                 <tbody>
                   {rows.map((d) => {
-                    const tone = balanceTone(d.balance);
                     return (
                       <tr key={d.id} style={{ borderTop: `1px solid ${C.line}` }}>
                         <td className="px-5 py-3">
@@ -117,12 +107,7 @@ export default function DistributorsPage() {
                           {money(d.totalValue)}
                         </td>
                         <td className="px-5 py-3">
-                          <span
-                            className="rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap"
-                            style={{ background: tone.bg, color: tone.fg }}
-                          >
-                            {tone.label}
-                          </span>
+                          <BalancePill balance={d.balance} />
                         </td>
                         <td className="px-5 py-3 text-right">
                           <Link

@@ -108,13 +108,13 @@ export default function SalesTable({
                   <p className="text-[10px] uppercase tracking-wide" style={{ color: C.ink400 }}>
                     Qty (Large)
                   </p>
-                  <div className="text-[13px] mt-0.5"><SaleSizeCell sale={s} size="LARGE" dense /></div>
+                  <div className="text-[13px] mt-0.5"><SaleSizeCell record={s} size="LARGE" dense /></div>
                 </div>
                 <div>
                   <p className="text-[10px] uppercase tracking-wide" style={{ color: C.ink400 }}>
                     Qty (Small)
                   </p>
-                  <div className="text-[13px] mt-0.5"><SaleSizeCell sale={s} size="SMALL" dense /></div>
+                  <div className="text-[13px] mt-0.5"><SaleSizeCell record={s} size="SMALL" dense /></div>
                 </div>
                 <div className="text-right">
                   <p className="text-[10px] uppercase tracking-wide" style={{ color: C.ink400 }}>
@@ -158,8 +158,8 @@ export default function SalesTable({
                       {shortDate(s.date)}
                     </td>
                     <td className="px-5 py-3 align-top">{distributorCell(s)}</td>
-                    <td className="px-5 py-3 align-top"><SaleSizeCell sale={s} size="LARGE" /></td>
-                    <td className="px-5 py-3 align-top"><SaleSizeCell sale={s} size="SMALL" /></td>
+                    <td className="px-5 py-3 align-top"><SaleSizeCell record={s} size="LARGE" /></td>
+                    <td className="px-5 py-3 align-top"><SaleSizeCell record={s} size="SMALL" /></td>
                     <td
                       className="px-5 py-3 font-medium whitespace-nowrap align-top"
                       style={{ fontFamily: FONT_MONO, color: C.ink900 }}

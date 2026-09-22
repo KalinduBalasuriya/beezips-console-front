@@ -58,11 +58,11 @@ export const INVENTORY_CATEGORIES: InventoryCategory[] = [
 ];
 
 export const DISTRIBUTORS: Distributor[] = [
-  { id: 1, name: "Kandy Beverages Co.", joined: "2024-02-14", balance: 0 },
-  { id: 2, name: "Peradeniya Distributors", joined: "2024-06-03", balance: -4500 },
-  { id: 3, name: "Digana Retail Hub", joined: "2025-01-20", balance: 0 },
-  { id: 4, name: "Katugastota Traders", joined: "2025-08-11", balance: 1200 },
-  { id: 5, name: "Gampola Agents", joined: "2026-03-02", balance: -6000 },
+  { id: 1, name: "Kandy Beverages Co.", joined: "2024-02-14" },
+  { id: 2, name: "Peradeniya Distributors", joined: "2024-06-03" },
+  { id: 3, name: "Digana Retail Hub", joined: "2025-01-20" },
+  { id: 4, name: "Katugastota Traders", joined: "2025-08-11" },
+  { id: 5, name: "Gampola Agents", joined: "2026-03-02" },
 ];
 
 /* each sale is broken into flavor line items, each with large/small bottle
@@ -217,16 +217,16 @@ export const EXPENSES: Expense[] = [
 
 /* cash actually received from distributors — distinct from sales issued */
 export const INCOME_PAYMENTS: IncomePayment[] = [
-  { id: 1, date: "2026-09-01", distributor: "Kandy Beverages Co.", amount: 32100, method: "Cash", bottlesReturned: 120, reference: "RCP-0091" },
-  { id: 2, date: "2026-08-31", distributor: "Digana Retail Hub", amount: 44900, method: "Bank transfer", bottlesReturned: 180, reference: "RCP-0090" },
-  { id: 3, date: "2026-08-31", distributor: "Katugastota Traders", amount: 23450, method: "Cash", bottlesReturned: 90, reference: "RCP-0089" },
-  { id: 4, date: "2026-08-30", distributor: "Peradeniya Distributors", amount: 21400, method: "Cash", bottlesReturned: 70, reference: "RCP-0088" },
-  { id: 5, date: "2026-08-29", distributor: "Kandy Beverages Co.", amount: 18600, method: "Bank transfer", bottlesReturned: 110, reference: "RCP-0087" },
-  { id: 6, date: "2026-08-28", distributor: "Peradeniya Distributors", amount: 23200, method: "Cash", bottlesReturned: 60, reference: "RCP-0086" },
-  { id: 7, date: "2026-08-26", distributor: "Katugastota Traders", amount: 16850, method: "Cheque", bottlesReturned: 55, reference: "RCP-0085" },
-  { id: 8, date: "2026-08-25", distributor: "Gampola Agents", amount: 16000, method: "Cash", bottlesReturned: 80, reference: "RCP-0084" },
-  { id: 9, date: "2026-08-21", distributor: "Digana Retail Hub", amount: 14800, method: "Bank transfer", bottlesReturned: 40, reference: "RCP-0083" },
-  { id: 10, date: "2026-08-15", distributor: "Kandy Beverages Co.", amount: 28500, method: "Cash", bottlesReturned: 95, reference: "RCP-0082" },
+  { id: 1, date: "2026-09-01", distributor: "Kandy Beverages Co.", amount: 32100, method: "Cash", returns: [{ flavor: "Mango", large: 20, small: 10 }], largePrice: 175, smallPrice: 95, reference: "RCP-0091" },
+  { id: 2, date: "2026-08-31", distributor: "Digana Retail Hub", amount: 44900, method: "Bank transfer", returns: [{ flavor: "Mango", large: 30, small: 20 }, { flavor: "Passion fruit", large: 10, small: 40 }], largePrice: 175, smallPrice: 95, reference: "RCP-0090" },
+  { id: 3, date: "2026-08-31", distributor: "Katugastota Traders", amount: 23450, method: "Cash", returns: [{ flavor: "Mixed fruit", large: 20, small: 10 }], largePrice: 175, smallPrice: 95, reference: "RCP-0089" },
+  { id: 4, date: "2026-08-30", distributor: "Peradeniya Distributors", amount: 21400, method: "Cash", returns: [{ flavor: "Soursop", large: 10, small: 10 }], largePrice: 175, smallPrice: 95, reference: "RCP-0088" },
+  { id: 5, date: "2026-08-29", distributor: "Kandy Beverages Co.", amount: 18600, method: "Bank transfer", returns: [{ flavor: "Soursop", large: 15, small: 5 }], largePrice: 175, smallPrice: 95, reference: "RCP-0087" },
+  { id: 6, date: "2026-08-28", distributor: "Peradeniya Distributors", amount: 17640, method: "Cash", returns: [{ flavor: "Mango", large: 12, small: 8 }], largePrice: 175, smallPrice: 95, reference: "RCP-0086" },
+  { id: 7, date: "2026-08-26", distributor: "Katugastota Traders", amount: 10620, method: "Cheque", returns: [{ flavor: "Passion fruit", large: 8, small: 4 }], largePrice: 175, smallPrice: 95, reference: "RCP-0085" },
+  { id: 8, date: "2026-08-25", distributor: "Gampola Agents", amount: 35250, method: "Cash", returns: [{ flavor: "Soursop", large: 25, small: 15 }], largePrice: 175, smallPrice: 95, reference: "RCP-0084" },
+  { id: 9, date: "2026-08-21", distributor: "Digana Retail Hub", amount: 18625, method: "Bank transfer", returns: [{ flavor: "Mixed fruit", large: 15, small: 10 }], largePrice: 175, smallPrice: 95, reference: "RCP-0083" },
+  { id: 10, date: "2026-08-15", distributor: "Kandy Beverages Co.", amount: 10350, method: "Cash", returns: [{ flavor: "Mango", large: 25, small: 0 }, { flavor: "Tamarind", large: 10, small: 5 }], largePrice: 175, smallPrice: 95, reference: "RCP-0082" },
 ];
 
 export const STATUS_STYLE: Record<SaleStatus, StatusStyleEntry> = {

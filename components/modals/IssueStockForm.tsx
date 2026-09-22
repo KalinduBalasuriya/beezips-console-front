@@ -4,9 +4,9 @@ import { DISTRIBUTORS, FLAVORS } from "../../data/mockData";
 import {
   finishedStockFor,
   hasSize,
-  issueTotals,
-  rowBottles,
-  type IssueRowInput,
+  lineBottles,
+  lineTotals,
+  type BottleLineInput,
 } from "../../lib/issue";
 import { issueSchema, validate, type FormIssues } from "../../lib/schemas";
 import { money, qty as fmtQty } from "../../lib/format";
@@ -24,7 +24,7 @@ interface IssueStockFormProps {
   onSaved: () => void;
 }
 
-const emptyRow = (): IssueRowInput => ({
+const emptyRow = (): BottleLineInput => ({
   flavor: FLAVORS[0],
   bottleSize: "LARGE",
   bottles: "",
@@ -59,7 +59,7 @@ const SIZES: SizeOption[] = [
 export default function IssueStockForm({ onClose, onSaved }: IssueStockFormProps) {
   const [date, setDate] = useState("2026-09-01");
   const [distributorId, setDistributorId] = useState(DISTRIBUTORS[0].id);
-  const [rows, setRows] = useState<IssueRowInput[]>([emptyRow()]);
+  const [rows, setRows] = useState<BottleLineInput[]>([emptyRow()]);
   const [largePrice, setLargePrice] = useState("");
   const [smallPrice, setSmallPrice] = useState("");
   const [notes, setNotes] = useState("");
@@ -69,7 +69,7 @@ export default function IssueStockForm({ onClose, onSaved }: IssueStockFormProps
 
   const addRow = () => setRows([...rows, emptyRow()]);
   const removeRow = (i: number) => setRows(rows.filter((_, idx) => idx !== i));
-  const updateRow = (i: number, patch: Partial<IssueRowInput>) =>
+  const updateRow = (i: number, patch: Partial<BottleLineInput>) =>
     setRows(rows.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
 
   const rateFor = (size: BottleSize) =>
@@ -87,7 +87,7 @@ export default function IssueStockForm({ onClose, onSaved }: IssueStockFormProps
     return key ? fields[key] : undefined;
   };
 
-  const totals = issueTotals({ rows, largePrice, smallPrice });
+  const totals = lineTotals({ lines: rows, largePrice, smallPrice });
   const totalFor = (size: BottleSize) =>
     size === "LARGE"
       ? { bottles: totals.largeBottles, amount: totals.largeAmount }
@@ -172,7 +172,7 @@ export default function IssueStockForm({ onClose, onSaved }: IssueStockFormProps
       <div className="space-y-3 mb-4 sm:mb-5">
         {rows.map((row, i) => {
           const stock = finishedStockFor(row.flavor, row.bottleSize);
-          const short = !!stock && rowBottles(row) > stock.qty;
+          const short = !!stock && lineBottles(row) > stock.qty;
           const error = issueFor(i);
           return (
             <div key={i}>
