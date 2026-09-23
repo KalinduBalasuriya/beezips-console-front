@@ -2,6 +2,7 @@
 
 import StatCardsRow from "./StatCardsRow";
 import QuickActionsRow from "./QuickActionsRow";
+import RecentMovementsCard from "./RecentMovementsCard";
 import StockSnapshotCard from "../inventory/StockSnapshotCard";
 import { ErrorState } from "../ui/States";
 import { useDashboardData } from "../../lib/useDashboardData";
@@ -22,7 +23,12 @@ export default function DashboardHome() {
           <StatCardsRow range={range} state={state} />
           <QuickActionsRow />
 
-          <StockSnapshotCard state={state} />
+          {/* the bottle ledger gets the full content width at every
+              breakpoint, with the stock snapshot stacked underneath it */}
+          <div className="space-y-5">
+            <RecentMovementsCard state={state} />
+            <StockSnapshotCard state={state} />
+          </div>
         </>
       )}
     </div>

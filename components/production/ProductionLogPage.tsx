@@ -1,19 +1,21 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Factory, Plus } from "lucide-react";
 import { PRODUCTION_LOG } from "../../data/mockData";
 import {
-  bottlesProduced,
+  bottlesProducedByFlavor,
+  bottlesProducedBySize,
   dayBottlesByFlavor,
   dayBottlesBySize,
   dayFruitUsed,
   dayMaterials,
 } from "../../lib/selectors";
-import { monthToDate, periodLabel } from "../../lib/period";
+import { monthToDate, isWithin } from "../../lib/period";
 import { qty as fmtQty, shortDate } from "../../lib/format";
 import { C, FONT_BODY, FONT_MONO } from "../../lib/theme";
 import PageHeader from "../ui/PageHeader";
+import DateRangeFilter from "../ui/DateRangeFilter";
 import HoverBreakdown, { type BreakdownRow } from "../ui/HoverBreakdown";
 import { useModals } from "../layout/AppShell";
 import type { BottleSize, ProductionDay } from "../../lib/types";
@@ -30,10 +32,44 @@ const COLUMNS = [
 
 export default function ProductionLogPage() {
   const { open } = useModals();
-  const range = useMemo(() => monthToDate(), []);
-  /* month-to-date, matching the dashboard's Bottles Produced card so the
-     "View all" landing reconciles with the figure the user tapped */
-  const monthBottles = bottlesProduced(range);
+  /* opens on month-to-date, the rule the dashboard's Bottles Produced card
+     uses, so the "View all" landing reproduces the figure that was tapped */
+  const monthRange = useMemo(() => monthToDate(), []);
+  const [range, setRange] = useState(monthRange);
+
+  const days = useMemo(
+    () => PRODUCTION_LOG.filter((d) => isWithin(d.date, range)),
+    [range],
+  );
+  /* the same selectors the stat card reads, so the two cannot disagree */
+  const totals = bottlesProducedBySize(range);
+  const byFlavor = bottlesProducedByFlavor(range);
+
+  /** A size's figure for the window, opening its flavors on hover or tap. */
+  const sizeFigure = (size: BottleSize) => {
+    const key = size === "LARGE" ? "large" : "small";
+    const label = size === "LARGE" ? "Large" : "Small";
+    const value = totals[key];
+
+    if (value === 0) {
+      return <span style={{ fontFamily: FONT_MONO, color: C.ink400 }}>0</span>;
+    }
+
+    const rows: BreakdownRow[] = byFlavor
+      .filter((f) => f[key] > 0)
+      .map((f) => ({ label: f.flavor, value: fmtQty(f[key]) }));
+
+    return (
+      <HoverBreakdown
+        trigger={<span style={{ fontFamily: FONT_MONO }}>{fmtQty(value)}</span>}
+        title={`${label} bottles produced by flavor`}
+        rows={rows}
+        total={fmtQty(value)}
+        ariaLabel={`${fmtQty(value)} ${label.toLowerCase()} bottles produced. Show breakdown by flavor`}
+        triggerClassName="min-h-11 inline-flex items-center text-[15px] font-semibold sm:text-lg"
+      />
+    );
+  };
 
   /* ---------- the four breakdown cells, shared by card and table ----------
 
@@ -102,7 +138,7 @@ export default function ProductionLogPage() {
       <PageHeader
         icon={Factory}
         title="Production"
-        subtitle={`${PRODUCTION_LOG.length} batches logged · ${fmtQty(monthBottles)} bottles produced ${periodLabel(range)}`}
+        subtitle={`${days.length} ${days.length === 1 ? "batch" : "batches"} in this window`}
         action={
           <button
             onClick={() => open("production")}
@@ -114,10 +150,59 @@ export default function ProductionLogPage() {
         }
       />
 
+      <DateRangeFilter
+        range={range}
+        onChange={setRange}
+        onReset={() => setRange(monthRange)}
+      />
+
+      {/* the same figure the dashboard's Bottles Produced card reports for this
+          window, broken out by size */}
+      <dl
+        className="rounded-xl px-3 py-3 mb-3 grid grid-cols-2 gap-x-4 gap-y-3 sm:rounded-2xl sm:px-5 sm:py-4 sm:mb-4 lg:grid-cols-3"
+        style={{ background: C.card, border: `1px solid ${C.line}`, fontFamily: FONT_BODY }}
+      >
+        <div className="min-w-0">
+          <dt className="text-[10px] uppercase tracking-wide" style={{ color: C.ink400 }}>
+            Large bottles produced
+          </dt>
+          <dd className="mt-0.5" style={{ color: C.ink900 }}>
+            {sizeFigure("LARGE")}
+          </dd>
+        </div>
+        <div className="min-w-0">
+          <dt className="text-[10px] uppercase tracking-wide" style={{ color: C.ink400 }}>
+            Small bottles produced
+          </dt>
+          <dd className="mt-0.5" style={{ color: C.ink900 }}>
+            {sizeFigure("SMALL")}
+          </dd>
+        </div>
+        <div className="min-w-0">
+          <dt className="text-[10px] uppercase tracking-wide" style={{ color: C.ink400 }}>
+            Bottles in total
+          </dt>
+          <dd
+            className="text-[15px] font-semibold mt-0.5 sm:text-lg"
+            style={{ fontFamily: FONT_MONO, color: C.ink900 }}
+          >
+            {fmtQty(totals.total)}
+          </dd>
+        </div>
+      </dl>
+
       {/* mobile / tablet: one card per production day, the same four
           breakdowns stacked instead of spread across columns */}
       <div className="lg:hidden space-y-2.5">
-        {PRODUCTION_LOG.map((d, i) => {
+        {days.length === 0 && (
+          <p
+            className="rounded-xl px-4 py-6 text-center text-[13px]"
+            style={{ background: C.card, border: `1px solid ${C.line}`, color: C.ink400 }}
+          >
+            No production batches in this date range.
+          </p>
+        )}
+        {days.map((d, i) => {
           const sizes = dayBottlesBySize(d);
           return (
             <div
@@ -202,7 +287,18 @@ export default function ProductionLogPage() {
               </tr>
             </thead>
             <tbody>
-              {PRODUCTION_LOG.map((d, i) => {
+              {days.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={COLUMNS.length}
+                    className="px-5 py-8 text-center text-sm"
+                    style={{ color: C.ink400 }}
+                  >
+                    No production batches in this date range.
+                  </td>
+                </tr>
+              )}
+              {days.map((d, i) => {
                 const sizes = dayBottlesBySize(d);
                 return (
                   <tr key={i} style={{ borderTop: `1px solid ${C.line}` }}>

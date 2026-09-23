@@ -23,8 +23,13 @@ interface BottlesSoldStatCardProps {
 /**
  * Total Bottles Sold stat card (spec §47).
  *
- * Finished-product bottles issued to distributors for the current month to
- * date, split into Large and Small; either figure opens a per-flavor breakdown.
+ * Bottles that went out and stayed out for the current month to date, split
+ * into Large and Small; either figure opens a per-flavor breakdown.
+ *
+ * Net of returns: stock a distributor brought back inside the period is
+ * deducted, so this is what was actually sold rather than what was issued. The
+ * Sales & Distribution page nets the same way, and reproduces this figure when
+ * its window is set to the 1st and today.
  *
  * The card chrome deliberately mirrors ui/StatCard — same padding, badge,
  * label and "View all" treatment — so it sits in the same grid at the same

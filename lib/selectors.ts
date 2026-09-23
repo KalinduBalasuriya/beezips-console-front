@@ -37,6 +37,13 @@ function batchBottles(batch: ProductionBatch): number {
   return batch.large + batch.small;
 }
 
+/** A per-flavor map as a list: biggest holding first, zero rows left out. */
+function ranked(map: Map<string, FlavorBottles>): FlavorBottles[] {
+  return [...map.values()]
+    .filter((f) => f.large !== 0 || f.small !== 0)
+    .sort((a, b) => b.large + b.small - (a.large + a.small));
+}
+
 /** SUM(produced bottles) WHERE production date is within the period. */
 export function bottlesProduced(range: DateRange): number {
   return sumInPeriod(PRODUCTION_LOG, range, (day) =>
@@ -145,6 +152,9 @@ export interface DistributorTrade {
    * Where the account stands: received less what they owe for. Negative means
    * they owe us (Due), positive that they have paid ahead (Exceed), zero
    * settled. Stock leaves unpaid, so this is the whole point of the ledger.
+   *
+   * Always the position today, across every record — a balance is not a period
+   * figure, so narrowing the report to a month does not narrow what is owed.
    */
   balance: number;
   /** ISO date of the latest issue or payment, or null when neither exists */
@@ -176,6 +186,8 @@ export interface DistributorMovement {
   kind: "ISSUE" | "RETURN";
   /** ISO business date, yyyy-mm-dd */
   date: string;
+  /** whose movement it is — the dashboard lists every distributor's together */
+  distributor: string;
   /** the flavors that moved, so the quantities can be opened up */
   items: SaleItem[];
   largePrice: number;
@@ -186,19 +198,15 @@ export interface DistributorMovement {
   amount: number;
 }
 
-/**
- * A distributor's issues and returns, newest first.
- *
- * Payments that brought nothing back are left out — they moved money, not
- * bottles, and belong to the Income register rather than this ledger.
- */
-export function distributorMovements(name: string): DistributorMovement[] {
-  const issues: DistributorMovement[] = distributorSales(name).map((sale) => {
+/** Every issue and return, newest first, whichever distributor they belong to. */
+function allMovements(): DistributorMovement[] {
+  const issues: DistributorMovement[] = SALES.map((sale) => {
     const t = saleTotals(sale);
     return {
       id: `issue-${sale.id}`,
-      kind: "ISSUE",
+      kind: "ISSUE" as const,
       date: sale.date,
+      distributor: sale.distributor,
       items: sale.items,
       largePrice: sale.largePrice,
       smallPrice: sale.smallPrice,
@@ -208,31 +216,56 @@ export function distributorMovements(name: string): DistributorMovement[] {
     };
   });
 
-  const returns: DistributorMovement[] = distributorPayments(name)
-    .map((payment) => {
-      const t = returnTotals(payment);
-      return {
-        id: `return-${payment.id}`,
-        kind: "RETURN" as const,
-        date: payment.date,
-        items: payment.returns,
-        largePrice: payment.largePrice,
-        smallPrice: payment.smallPrice,
-        large: t.large,
-        small: t.small,
-        amount: t.totalAmt,
-      };
-    })
-    .filter((m) => m.large + m.small > 0);
+  const returns: DistributorMovement[] = INCOME_PAYMENTS.map((payment) => {
+    const t = returnTotals(payment);
+    return {
+      id: `return-${payment.id}`,
+      kind: "RETURN" as const,
+      date: payment.date,
+      distributor: payment.distributor,
+      items: payment.returns,
+      largePrice: payment.largePrice,
+      smallPrice: payment.smallPrice,
+      large: t.large,
+      small: t.small,
+      amount: t.totalAmt,
+    };
+    /* a payment that brought nothing back moved money, not bottles */
+  }).filter((m) => m.large + m.small > 0);
 
   return [...issues, ...returns].sort(
     (a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id),
   );
 }
 
-export function distributorTrade(name: string): DistributorTrade {
-  const sales = distributorSales(name);
-  const payments = distributorPayments(name);
+/**
+ * A distributor's issues and returns, newest first.
+ *
+ * Payments that brought nothing back are left out — they moved money, not
+ * bottles, and belong to the Income register rather than this ledger.
+ */
+export function distributorMovements(name: string): DistributorMovement[] {
+  return allMovements().filter((m) => m.distributor === name);
+}
+
+/**
+ * The latest bottle movements across every distributor — what the dashboard
+ * shows. Issues and returns interleave, so six records may be four issues and
+ * two returns rather than six sales.
+ */
+export function recentMovements(limit: number): DistributorMovement[] {
+  return allMovements().slice(0, limit);
+}
+
+export function distributorTrade(name: string, range?: DateRange): DistributorTrade {
+  const allSales = distributorSales(name);
+  const allPayments = distributorPayments(name);
+  /* the quantities and values answer for the period asked about; the balance
+     below does not, because what is owed is owed whatever the report shows */
+  const sales = range ? allSales.filter((s) => isWithin(s.date, range)) : allSales;
+  const payments = range
+    ? allPayments.filter((p) => isWithin(p.date, range))
+    : allPayments;
 
   /* the two directions are kept apart as well as netted: the profile states
      the subtraction, so each side needs its own flavor split */
@@ -243,11 +276,6 @@ export function distributorTrade(name: string): DistributorTrade {
     map.set(flavor, found);
     return found;
   };
-  /** biggest holding first, with anything that came to nothing left out */
-  const ranked = (map: Map<string, FlavorBottles>) =>
-    [...map.values()]
-      .filter((f) => f.large !== 0 || f.small !== 0)
-      .sort((a, b) => b.large + b.small - (a.large + a.small));
 
   const issued = { large: 0, small: 0 };
   const returned = { large: 0, small: 0 };
@@ -283,6 +311,12 @@ export function distributorTrade(name: string): DistributorTrade {
      bottles back — cash and stock are settled against the same account */
   const received = payments.reduce((sum, p) => sum + p.amount, 0);
 
+  /* the account's standing position, from every record rather than the period */
+  const owedFor =
+    allSales.reduce((sum, s) => sum + saleTotalAmount(s), 0) -
+    allPayments.reduce((sum, p) => sum + returnTotals(p).totalAmt, 0);
+  const balance = allPayments.reduce((sum, p) => sum + p.amount, 0) - owedFor;
+
   /* net per flavor: every flavor issued, less whatever came back of it */
   const netFlavors = new Map<string, FlavorBottles>();
   for (const f of issuedFlavors.values()) {
@@ -309,21 +343,21 @@ export function distributorTrade(name: string): DistributorTrade {
     returnedAmount,
     netAmount,
     received,
-    balance: received - netAmount,
+    balance,
     lastActivity: dates.length ? dates[dates.length - 1] : null,
   };
 }
 
 /**
- * Every distributor who has traded, biggest net purchase first.
+ * Every distributor who traded in the period, biggest net purchase first.
  *
  * One row per distributor, however many times they took stock — the Sales &
- * Distribution list reports where each account stands, not each visit.
- * Distributors who have never taken stock are left out rather than listed as
+ * Distribution list reports what each account bought, not each visit.
+ * Distributors with nothing in the period are left out rather than listed as
  * zeroes; the Distributors page is the register of who exists.
  */
-export function distributorTrades(): DistributorTrade[] {
-  return DISTRIBUTORS.map((d) => distributorTrade(d.name))
+export function distributorTrades(range?: DateRange): DistributorTrade[] {
+  return DISTRIBUTORS.map((d) => distributorTrade(d.name, range))
     .filter((t) => t.issues > 0 || t.returned.total > 0)
     .sort((a, b) => b.netAmount - a.netAmount);
 }
@@ -394,46 +428,56 @@ export interface FlavorBottles {
 }
 
 /**
- * Finished-product bottles issued to distributors within the period, split by
- * size. Uses the same month-to-date rule as every other dashboard figure, so
- * sales from previous months and anything dated after today are excluded.
+ * Bottles sold within the period, split by size.
+ *
+ * Net of returns: a distributor who took 500 small bottles and brought 50 back
+ * inside the period sold 450 of them, so issues add and returns subtract. That
+ * is the same arithmetic the Sales & Distribution table performs, which is why
+ * the stat card and that table agree for any one period.
+ *
+ * Uses the same date rule as every other figure, so records outside the period
+ * are excluded at both ends.
  */
 export function bottlesSold(range: DateRange): BottlesSold {
   let large = 0;
   let small = 0;
-  for (const sale of SALES) {
-    if (!isWithin(sale.date, range)) continue;
-    for (const item of sale.items) {
-      large += item.large;
-      small += item.small;
-    }
+  for (const m of allMovements()) {
+    if (!isWithin(m.date, range)) continue;
+    const sign = m.kind === "ISSUE" ? 1 : -1;
+    large += sign * m.large;
+    small += sign * m.small;
   }
   return { large, small, total: large + small };
 }
 
-/**
- * The same quantities broken down by flavor, biggest seller first — the detail
- * behind the Large/Small figures. Derived from the sale line items, never a
- * fixed flavor list, so a new flavor appears here as soon as it is sold.
- */
+/** The same figure split by flavor, biggest seller first. */
 export function bottlesSoldByFlavor(range: DateRange): FlavorBottles[] {
   const totals = new Map<string, FlavorBottles>();
-  for (const sale of SALES) {
-    if (!isWithin(sale.date, range)) continue;
-    for (const item of sale.items) {
-      const entry = totals.get(item.flavor) ?? {
-        flavor: item.flavor,
-        large: 0,
-        small: 0,
-      };
-      entry.large += item.large;
-      entry.small += item.small;
+  for (const m of allMovements()) {
+    if (!isWithin(m.date, range)) continue;
+    const sign = m.kind === "ISSUE" ? 1 : -1;
+    for (const item of m.items) {
+      const entry = totals.get(item.flavor) ?? { flavor: item.flavor, large: 0, small: 0 };
+      entry.large += sign * item.large;
+      entry.small += sign * item.small;
       totals.set(item.flavor, entry);
     }
   }
-  return [...totals.values()].sort(
-    (a, b) => b.large + b.small - (a.large + a.small),
-  );
+  return ranked(totals);
+}
+
+/** Per-flavor lists added together, biggest holding first. */
+export function combineFlavorBottles(lists: FlavorBottles[][]): FlavorBottles[] {
+  const totals = new Map<string, FlavorBottles>();
+  for (const list of lists) {
+    for (const f of list) {
+      const entry = totals.get(f.flavor) ?? { flavor: f.flavor, large: 0, small: 0 };
+      entry.large += f.large;
+      entry.small += f.small;
+      totals.set(f.flavor, entry);
+    }
+  }
+  return ranked(totals);
 }
 
 /* ---------- bottles produced, by size and flavor (spec §48.2) ---------- */
