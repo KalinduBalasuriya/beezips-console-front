@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { DISTRIBUTORS } from "../data/mockData";
-import { findItem, requiredQuantities } from "./production";
 import { bottlesByFlavor, finishedItemName, finishedStockFor } from "./issue";
 import { toISODate } from "./period";
 import type { BottleSize, ExpenseCategory, PaymentMethod } from "./types";
@@ -74,6 +73,14 @@ const optionalCount = (message: string) =>
 
 const requiredText = (message: string) => z.string().trim().min(1, message);
 
+/** A record chosen from a select whose option values are API ids. The DOM
+ *  hands back a string; an empty one means nothing was picked. */
+const selectedId = (message: string) =>
+  z
+    .union([z.string(), z.number()])
+    .transform(Number)
+    .refine((id) => Number.isInteger(id) && id > 0, message);
+
 /** A business date: present, well formed, and never in the future — the
  *  dashboard's period rule excludes future records, so accepting one here
  *  would create a row no report could ever show. */
@@ -112,6 +119,14 @@ const SIZE_RULES = [
 
 /* ---------- Add production ---------- */
 
+/**
+ * Mirrors the API's own rules (CreateProductionRequestValidator) so staff see
+ * a mistake beside the input that caused it, before a round trip. The API
+ * remains the authority: it re-checks all of this, and also that every flavor
+ * and material exists and is still in use.
+ */
+export const NOTES_MAX_LENGTH = 500;
+
 export const productionSchema = z
   .object({
     date: businessDate,
@@ -119,10 +134,16 @@ export const productionSchema = z
       .array(
         z
           .object({
-            flavor: requiredText("Choose a flavor."),
+            flavorId: selectedId("Choose a flavor."),
             kg: positiveNumber("Enter the fruit used, in kg."),
             largeBottles: optionalCount("Enter the large bottles produced."),
             smallBottles: optionalCount("Enter the small bottles produced."),
+            materials: z.array(
+              z.object({
+                rawMaterialId: selectedId("Choose a raw material."),
+                quantity: positiveNumber("Enter the quantity used."),
+              }),
+            ),
           })
           .refine((row) => row.largeBottles > 0 || row.smallBottles > 0, {
             path: ["largeBottles"],
@@ -130,80 +151,43 @@ export const productionSchema = z
           }),
       )
       .min(1, "Add at least one flavor."),
-    materials: z.array(
-      z.object({
-        material: requiredText("Choose a raw material."),
-        quantity: positiveNumber("Enter the quantity used."),
-      }),
-    ),
-    notes: z.string().optional(),
+    notes: z
+      .string()
+      .max(NOTES_MAX_LENGTH, `Notes can't be longer than ${NOTES_MAX_LENGTH} characters.`)
+      .optional(),
   })
   .superRefine((batch, ctx) => {
     /* one row already carries both sizes, so the same flavor twice would
        double-count one run */
-    const seenRows = new Set<string>();
+    const seenRows = new Set<number>();
     batch.rows.forEach((row, index) => {
-      if (seenRows.has(row.flavor)) {
+      if (seenRows.has(row.flavorId)) {
         ctx.addIssue({
           code: "custom",
-          path: ["rows", index, "flavor"],
-          message: `${row.flavor} is already listed — combine the rows.`,
+          path: ["rows", index, "flavorId"],
+          message: "This flavor is already listed — combine the rows.",
         });
       }
-      seenRows.add(row.flavor);
+      seenRows.add(row.flavorId);
+
+      /* materials belong to their flavor's run, so a repeat only matters
+         within the same row */
+      const seenMaterials = new Set<number>();
+      row.materials.forEach((m, materialIndex) => {
+        if (seenMaterials.has(m.rawMaterialId)) {
+          ctx.addIssue({
+            code: "custom",
+            path: ["rows", index, "materials", materialIndex, "rawMaterialId"],
+            message: "This material is already listed for this flavor.",
+          });
+        }
+        seenMaterials.add(m.rawMaterialId);
+      });
     });
-
-    const seenMaterials = new Set<string>();
-    batch.materials.forEach((m, index) => {
-      if (seenMaterials.has(m.material)) {
-        ctx.addIssue({
-          code: "custom",
-          path: ["materials", index, "material"],
-          message: `${m.material} is already listed.`,
-        });
-      }
-      seenMaterials.add(m.material);
-    });
-
-    /* stock check — a batch must not consume more than is on hand. Skipped
-       when a quantity failed to parse, since the arithmetic would be noise. */
-    const usable =
-      batch.rows.every(
-        (r) =>
-          Number.isFinite(r.largeBottles) &&
-          Number.isFinite(r.smallBottles) &&
-          Number.isFinite(r.kg),
-      ) &&
-      batch.materials.every((m) => Number.isFinite(m.quantity));
-    if (!usable) return;
-
-    const required = requiredQuantities(
-      batch.rows.map((r) => ({
-        flavor: r.flavor,
-        kg: String(r.kg),
-        largeBottles: String(r.largeBottles),
-        smallBottles: String(r.smallBottles),
-      })),
-      batch.materials.map((m) => ({ material: m.material, quantity: String(m.quantity) })),
-    );
-
-    for (const [name, needed] of required) {
-      if (needed <= 0) continue;
-      const item = findItem(name);
-      if (!item) {
-        ctx.addIssue({ code: "custom", message: `${name} is not in the inventory register.` });
-        continue;
-      }
-      if (needed > item.qty) {
-        ctx.addIssue({
-          code: "custom",
-          message: `Not enough ${item.name}: ${needed.toLocaleString()} ${item.unit} needed, ${item.qty.toLocaleString()} ${item.unit} in stock.`,
-        });
-      }
-    }
   });
 
 export type ProductionInput = z.input<typeof productionSchema>;
+export type ProductionOutput = z.output<typeof productionSchema>;
 
 /* ---------- Add expense ---------- */
 

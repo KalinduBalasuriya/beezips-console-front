@@ -12,6 +12,11 @@ interface ModalProps {
   onClose: () => void;
   onSubmit: () => void;
   submitLabel: string;
+  /** a save is in flight: the primary action is disabled and says so, so a
+   *  second tap cannot record the same thing twice */
+  submitting?: boolean;
+  /** the form cannot be submitted yet, e.g. its options are still loading */
+  submitDisabled?: boolean;
   children: ReactNode;
 }
 
@@ -30,6 +35,8 @@ export default function Modal({
   onClose,
   onSubmit,
   submitLabel,
+  submitting = false,
+  submitDisabled = false,
   children,
 }: ModalProps) {
   const titleId = useId();
@@ -144,14 +151,16 @@ export default function Modal({
           </button>
           <button
             onClick={onSubmit}
-            className="flex-1 sm:flex-none px-4 py-2 min-h-10 rounded-lg text-[13px] font-semibold transition-transform active:scale-[0.98] sm:min-h-11 sm:text-sm"
+            disabled={submitting || submitDisabled}
+            aria-busy={submitting}
+            className="flex-1 sm:flex-none px-4 py-2 min-h-10 rounded-lg text-[13px] font-semibold transition-transform active:scale-[0.98] disabled:opacity-60 disabled:active:scale-100 sm:min-h-11 sm:text-sm"
             style={{
               fontFamily: FONT_BODY,
               color: C.ink900,
               background: C.brand,
             }}
           >
-            {submitLabel}
+            {submitting ? "Saving…" : submitLabel}
           </button>
         </div>
       </div>

@@ -1,44 +1,35 @@
-import { INVENTORY } from "../data/mockData";
-import type { BottleSize, InventoryItem } from "./types";
+import type { ProductionOutput } from "./schemas";
+import type { CreateProductionRequest } from "./api/types";
 
 /**
  * Rules behind the Add Production form (spec §48.3–§48.6).
  *
- * Kept out of the component so the auto-fill and shortage arithmetic can be
- * exercised on its own, and reused later by a real save path.
+ * Kept out of the component so the auto-fill arithmetic and the mapping to the
+ * API contract can be exercised on their own.
  */
 
-/** One flavor's run, as the form holds it while being edited. The fruit kg
- *  covers the whole run; either size may be left blank, but not both. */
-export interface ProductionRowInput {
-  flavor: string;
-  kg: string;
-  largeBottles: string;
-  smallBottles: string;
-}
-
-/** One "Add material" row, as the form holds it while being edited. */
+/** One "Add material" row within a flavor, as the form holds it while being
+ *  edited. The id is the select's value, so it is a string until parsed. */
 export interface MaterialRowInput {
-  material: string;
+  rawMaterialId: string;
   quantity: string;
 }
 
-/* Inventory items every batch draws on automatically. Empty bottles are
-   size-specific — a small run cannot be filled from large-bottle stock. */
-export const BOTTLE_ITEM: Record<BottleSize, string> = {
-  LARGE: "Glass bottles (Large)",
-  SMALL: "Glass bottles (Small)",
-};
-export const LID_ITEM = "Lids";
-export const LABEL_ITEM = "Labels";
-
-/** Items production never consumes, so they stay out of the material picker. */
-const NOT_A_PRODUCTION_INPUT = ["Cartons (24-pack)"];
+/** One flavor's run, as the form holds it while being edited. The fruit kg
+ *  covers the whole run; either size may be left blank, but not both. Each run
+ *  is saved as its own production, so the materials it used belong to it. */
+export interface ProductionRowInput {
+  flavorId: string;
+  kg: string;
+  largeBottles: string;
+  smallBottles: string;
+  materials: MaterialRowInput[];
+}
 
 /**
  * A finished bottle always consumes exactly one empty bottle of its own size,
  * one lid and one label, so all three follow from Bottles produced and are
- * never keyed in (spec §48.4).
+ * never keyed in (spec §48.4). The API derives the same figures when it saves.
  */
 export function autoFillConsumption(bottles: string | number): {
   emptyBottlesUsed: number;
@@ -64,7 +55,9 @@ export interface BatchConsumption {
  * type. Adding a row with 100 small bottles takes the small count from 100
  * to 200 without touching the large count.
  */
-export function batchConsumption(rows: ProductionRowInput[]): BatchConsumption {
+export function batchConsumption(
+  rows: Pick<ProductionRowInput, "largeBottles" | "smallBottles">[],
+): BatchConsumption {
   let largeBottles = 0;
   let smallBottles = 0;
   for (const row of rows) {
@@ -76,45 +69,25 @@ export function batchConsumption(rows: ProductionRowInput[]): BatchConsumption {
 }
 
 /**
- * Items selectable in an "Add material" row: everything except fruit (captured
- * by the flavor rows), empty bottles, lids and labels (all auto-filled from
- * bottles produced), cartons (not a production input), and finished goods,
- * which production creates rather than consumes (spec §48.6).
+ * The validated form as the API's create request.
+ *
+ * The form takes one note for the whole day's run; the API keeps notes per
+ * flavor batch, so the note is recorded against each of them.
  */
-export function selectableMaterials(): InventoryItem[] {
-  const automatic = [BOTTLE_ITEM.LARGE, BOTTLE_ITEM.SMALL, LID_ITEM, LABEL_ITEM];
-  return INVENTORY.filter(
-    (item) =>
-      item.category !== "Fruits" &&
-      item.category !== "Finished Goods" &&
-      !automatic.includes(item.name) &&
-      !NOT_A_PRODUCTION_INPUT.includes(item.name),
-  );
-}
-
-export function findItem(name: string): InventoryItem | undefined {
-  return INVENTORY.find((item) => item.name === name);
-}
-
-/** Total quantity the batch would consume, per inventory item name. */
-export function requiredQuantities(
-  rows: ProductionRowInput[],
-  materials: MaterialRowInput[],
-): Map<string, number> {
-  const required = new Map<string, number>();
-  const add = (name: string, qty: number) =>
-    required.set(name, (required.get(name) ?? 0) + qty);
-
-  for (const row of rows) add(row.flavor, Number(row.kg) || 0);
-
-  const consumption = batchConsumption(rows);
-  add(BOTTLE_ITEM.LARGE, consumption.largeBottles);
-  add(BOTTLE_ITEM.SMALL, consumption.smallBottles);
-  add(LID_ITEM, consumption.lids);
-  add(LABEL_ITEM, consumption.labels);
-
-  for (const m of materials) {
-    if (m.material) add(m.material, Number(m.quantity) || 0);
-  }
-  return required;
+export function toCreateProductionRequest(form: ProductionOutput): CreateProductionRequest {
+  const notes = form.notes?.trim() || null;
+  return {
+    productionDate: form.date,
+    batches: form.rows.map((row) => ({
+      flavorId: row.flavorId,
+      usedFruitKg: row.kg,
+      largeQty: row.largeBottles,
+      smallQty: row.smallBottles,
+      notes,
+      rawMaterials: row.materials.map((m) => ({
+        rawMaterialId: m.rawMaterialId,
+        quantity: m.quantity,
+      })),
+    })),
+  };
 }
