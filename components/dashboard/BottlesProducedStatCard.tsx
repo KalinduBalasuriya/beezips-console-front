@@ -3,7 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Factory } from "lucide-react";
-import { bottlesProducedBySize, bottlesProducedByFlavor } from "../../lib/selectors";
+import {
+  bottlesProducedBySize,
+  bottlesProducedByFlavor,
+} from "../../lib/selectors";
 import { qty as fmtQty } from "../../lib/format";
 import { ROUTES } from "../../lib/routes";
 import { C, FONT_BODY, FONT_MONO } from "../../lib/theme";
@@ -53,13 +56,15 @@ export default function BottlesProducedStatCard({
   }, [openSize]);
 
   const hoverCapable = () =>
-    typeof window !== "undefined" && window.matchMedia("(hover: hover)").matches;
+    typeof window !== "undefined" &&
+    window.matchMedia("(hover: hover)").matches;
 
   const loading = state !== "ready" || !range;
   const totals = range ? bottlesProducedBySize(range) : null;
   const byFlavor = range ? bottlesProducedByFlavor(range) : [];
 
-  const key = (size: BottleSize) => (size === "LARGE" ? "large" : "small") as "large" | "small";
+  const key = (size: BottleSize) =>
+    (size === "LARGE" ? "large" : "small") as "large" | "small";
 
   const figure = (size: BottleSize, label: string) => {
     const value = totals ? totals[key(size)] : 0;
@@ -75,11 +80,18 @@ export default function BottlesProducedStatCard({
           aria-expanded={open}
           aria-label={`${label} bottles produced, ${fmtQty(value)}. Show breakdown by flavor`}
           className="text-lg font-semibold border-b border-dotted -mb-px sm:text-2xl"
-          style={{ fontFamily: FONT_MONO, color: C.ink900, borderColor: C.ink400 }}
+          style={{
+            fontFamily: FONT_MONO,
+            color: C.ink900,
+            borderColor: C.ink400,
+          }}
         >
           {fmtQty(value)}
         </button>
-        <span className="text-[10px] uppercase tracking-wide" style={{ color: C.ink400 }}>
+        <span
+          className="text-[10px] uppercase tracking-wide"
+          style={{ color: C.ink400 }}
+        >
           {label}
         </span>
       </span>
@@ -108,7 +120,10 @@ export default function BottlesProducedStatCard({
           {label} bottles
         </p>
         {rows.length === 0 ? (
-          <p className="text-xs" style={{ fontFamily: FONT_BODY, color: C.ink400 }}>
+          <p
+            className="text-xs"
+            style={{ fontFamily: FONT_BODY, color: C.ink400 }}
+          >
             No production data available for this period.
           </p>
         ) : (
@@ -126,7 +141,10 @@ export default function BottlesProducedStatCard({
             <tbody>
               {rows.map((f) => (
                 <tr key={f.flavor} style={{ borderTop: `1px solid ${C.line}` }}>
-                  <td className="py-1.5 pr-3 font-medium" style={{ color: C.ink900 }}>
+                  <td
+                    className="py-1.5 pr-3 font-medium"
+                    style={{ color: C.ink900 }}
+                  >
                     {f.flavor}
                   </td>
                   <td
@@ -140,7 +158,10 @@ export default function BottlesProducedStatCard({
             </tbody>
             <tfoot>
               <tr style={{ borderTop: `1px solid ${C.line}` }}>
-                <td className="py-1.5 pr-3 font-semibold" style={{ color: C.ink900 }}>
+                <td
+                  className="py-1.5 pr-3 font-semibold"
+                  style={{ color: C.ink900 }}
+                >
                   Total
                 </td>
                 <td
@@ -187,7 +208,10 @@ export default function BottlesProducedStatCard({
         {/* the sub-line is secondary detail — it costs a row of height on a
             phone, so it only appears once there's room for it */}
         {sub && !loading && (
-          <p className="hidden sm:block text-xs" style={{ fontFamily: FONT_BODY, color: C.ink400 }}>
+          <p
+            className="hidden sm:block text-xs"
+            style={{ fontFamily: FONT_BODY, color: C.ink400 }}
+          >
             {fmtQty(totals?.total ?? 0)} total · {sub}
           </p>
         )}
@@ -201,7 +225,8 @@ export default function BottlesProducedStatCard({
         </Link>
       </div>
 
-      {openSize && breakdown(openSize, openSize === "LARGE" ? "Large" : "Small")}
+      {openSize &&
+        breakdown(openSize, openSize === "LARGE" ? "Large" : "Small")}
     </div>
   );
 }

@@ -18,7 +18,6 @@ import Field from "../ui/Field";
 import TextInput from "../ui/TextInput";
 import Select from "../ui/Select";
 import FormErrors from "./FormErrors";
-import type { BottleSize } from "../../lib/types";
 import type {
   MaterialRowInput,
   ProductionRowInput,
@@ -31,14 +30,26 @@ interface ProductionFormProps {
 
 const emptyRow = (): ProductionRowInput => ({
   flavor: FLAVORS[0],
-  bottleSize: "LARGE",
   kg: "",
-  bottles: "",
+  largeBottles: "",
+  smallBottles: "",
 });
 
-const SIZES: { value: BottleSize; label: string }[] = [
-  { value: "LARGE", label: "Large" },
-  { value: "SMALL", label: "Small" },
+/* desktop columns shared by the heading row and every flavor row, so the
+   headings sit exactly over their inputs; the last track is the remove button */
+const ROW_GRID =
+  "sm:grid-cols-[minmax(0,1.4fr)_repeat(3,minmax(0,1fr))_2.5rem] sm:gap-2";
+
+/* the three quantities each flavor row takes; fruit kg covers both sizes */
+const QUANTITY_FIELDS: {
+  key: "kg" | "largeBottles" | "smallBottles";
+  caption: string;
+  placeholder: string;
+  aria: string;
+}[] = [
+  { key: "kg", caption: "Fruit (kg)", placeholder: "kg", aria: "Fruit used in kg" },
+  { key: "largeBottles", caption: "Large bottles", placeholder: "0", aria: "Large bottles produced" },
+  { key: "smallBottles", caption: "Small bottles", placeholder: "0", aria: "Small bottles produced" },
 ];
 
 export default function ProductionForm({
@@ -136,15 +147,30 @@ export default function ProductionForm({
         </button>
       </div>
 
-      <div className="space-y-3 mb-4 sm:mb-5">
+      {/* desktop column headings; on a phone each field carries its own caption */}
+      <div
+        className={`hidden ${ROW_GRID} mb-1 text-[10px] uppercase tracking-wide sm:grid`}
+        style={{ fontFamily: FONT_BODY, color: C.ink400 }}
+        aria-hidden
+      >
+        <span>Flavor</span>
+        {QUANTITY_FIELDS.map((f) => (
+          <span key={f.key} className="truncate">
+            {f.caption}
+          </span>
+        ))}
+      </div>
+
+      <div className="space-y-3 mb-4 sm:space-y-2 sm:mb-5">
         {rows.map((row, i) => {
           const error = issueFor("rows", i);
           return (
             <div key={i}>
-              {/* on a phone the flavor and size selects share the top line, with
-                  kg / bottles / remove on the line below */}
-              <div className="grid grid-cols-[1fr_1fr_auto] items-center gap-2 sm:grid-cols-[1.3fr_1fr_1fr_1fr_auto]">
-                <div className="col-span-2 sm:col-span-1">
+              {/* on a phone the flavor select and remove button share the top
+                  line, with kg / large / small on the line below; from sm up
+                  the quantities join the main grid as one line */}
+              <div className={`grid grid-cols-[minmax(0,1fr)_auto] items-end gap-2 ${ROW_GRID} sm:items-center`}>
+                <div className="min-w-0">
                   <Select
                     value={row.flavor}
                     onChange={(e) => updateRow(i, { flavor: e.target.value })}
@@ -155,46 +181,36 @@ export default function ProductionForm({
                     ))}
                   </Select>
                 </div>
-                <div className="col-span-1 sm:col-span-1">
-                  <Select
-                    value={row.bottleSize}
-                    onChange={(e) =>
-                      updateRow(i, { bottleSize: e.target.value as BottleSize })
-                    }
-                    aria-label={`Bottle size for row ${i + 1}`}
-                  >
-                    {SIZES.map((s) => (
-                      <option key={s.value} value={s.value}>
-                        {s.label}
-                      </option>
-                    ))}
-                  </Select>
-                </div>
-                <TextInput
-                  type="number"
-                  min="0"
-                  placeholder="Fruit kg"
-                  aria-label={`Fruit used in kg for row ${i + 1}`}
-                  value={row.kg}
-                  onChange={(e) => updateRow(i, { kg: e.target.value })}
-                />
-                <TextInput
-                  type="number"
-                  min="0"
-                  placeholder="Bottles"
-                  aria-label={`Bottles produced for row ${i + 1}`}
-                  value={row.bottles}
-                  onChange={(e) => updateRow(i, { bottles: e.target.value })}
-                />
                 <button
                   type="button"
                   onClick={() => removeRow(i)}
                   disabled={rows.length === 1}
-                  className="flex items-center justify-center h-10 w-10 shrink-0 rounded-md transition-colors hover:bg-black/5 disabled:opacity-30 sm:h-9 sm:w-9"
+                  className="flex items-center justify-center h-11 w-11 shrink-0 rounded-md transition-colors hover:bg-black/5 disabled:opacity-30 sm:order-last sm:h-10 sm:w-10"
                   aria-label={`Remove flavor row ${i + 1}`}
                 >
                   <Trash2 size={15} color={C.danger} />
                 </button>
+                <div className="col-span-2 grid grid-cols-3 gap-2 sm:contents">
+                  {QUANTITY_FIELDS.map((f) => (
+                    <label key={f.key} className="block min-w-0">
+                      <span
+                        className="block text-[10px] uppercase tracking-wide mb-0.5 sm:hidden"
+                        style={{ fontFamily: FONT_BODY, color: C.ink400 }}
+                      >
+                        {f.caption}
+                      </span>
+                      <TextInput
+                        type="number"
+                        min="0"
+                        inputMode={f.key === "kg" ? "decimal" : "numeric"}
+                        placeholder={f.placeholder}
+                        aria-label={`${f.aria} for row ${i + 1}`}
+                        value={row[f.key]}
+                        onChange={(e) => updateRow(i, { [f.key]: e.target.value })}
+                      />
+                    </label>
+                  ))}
+                </div>
               </div>
 
               {error && (

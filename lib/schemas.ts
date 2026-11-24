@@ -63,6 +63,15 @@ const positiveNumber = (message: string) =>
 const positiveCount = (message: string) =>
   positiveNumber(message).refine(Number.isInteger, "Enter a whole number.");
 
+/** A bottle count that may be left blank (read as 0); anything typed must
+ *  still be a whole, non-negative number. */
+const optionalCount = (message: string) =>
+  z
+    .union([z.string(), z.number()])
+    .transform((v) => (typeof v === "number" ? v : v.trim() === "" ? 0 : Number(v)))
+    .refine((n) => Number.isFinite(n) && n >= 0, message)
+    .refine(Number.isInteger, "Enter a whole number.");
+
 const requiredText = (message: string) => z.string().trim().min(1, message);
 
 /** A business date: present, well formed, and never in the future — the
@@ -108,12 +117,17 @@ export const productionSchema = z
     date: businessDate,
     rows: z
       .array(
-        z.object({
-          flavor: requiredText("Choose a flavor."),
-          bottleSize: z.enum(["LARGE", "SMALL"], { message: "Choose a bottle size." }),
-          kg: positiveNumber("Enter the fruit used, in kg."),
-          bottles: positiveCount("Enter the bottles produced."),
-        }),
+        z
+          .object({
+            flavor: requiredText("Choose a flavor."),
+            kg: positiveNumber("Enter the fruit used, in kg."),
+            largeBottles: optionalCount("Enter the large bottles produced."),
+            smallBottles: optionalCount("Enter the small bottles produced."),
+          })
+          .refine((row) => row.largeBottles > 0 || row.smallBottles > 0, {
+            path: ["largeBottles"],
+            message: "Enter the large or small bottles produced.",
+          }),
       )
       .min(1, "Add at least one flavor."),
     materials: z.array(
@@ -125,18 +139,18 @@ export const productionSchema = z
     notes: z.string().optional(),
   })
   .superRefine((batch, ctx) => {
-    /* the same flavor at the same size twice would double-count one run */
-    const seenRows = new Map<string, number>();
+    /* one row already carries both sizes, so the same flavor twice would
+       double-count one run */
+    const seenRows = new Set<string>();
     batch.rows.forEach((row, index) => {
-      const key = `${row.flavor}__${row.bottleSize}`;
-      if (seenRows.has(key)) {
+      if (seenRows.has(row.flavor)) {
         ctx.addIssue({
           code: "custom",
           path: ["rows", index, "flavor"],
-          message: `${row.flavor} (${row.bottleSize === "LARGE" ? "Large" : "Small"}) is already listed — combine the rows.`,
+          message: `${row.flavor} is already listed — combine the rows.`,
         });
       }
-      seenRows.set(key, index);
+      seenRows.add(row.flavor);
     });
 
     const seenMaterials = new Set<string>();
@@ -154,16 +168,21 @@ export const productionSchema = z
     /* stock check — a batch must not consume more than is on hand. Skipped
        when a quantity failed to parse, since the arithmetic would be noise. */
     const usable =
-      batch.rows.every((r) => Number.isFinite(r.bottles) && Number.isFinite(r.kg)) &&
+      batch.rows.every(
+        (r) =>
+          Number.isFinite(r.largeBottles) &&
+          Number.isFinite(r.smallBottles) &&
+          Number.isFinite(r.kg),
+      ) &&
       batch.materials.every((m) => Number.isFinite(m.quantity));
     if (!usable) return;
 
     const required = requiredQuantities(
       batch.rows.map((r) => ({
         flavor: r.flavor,
-        bottleSize: r.bottleSize,
         kg: String(r.kg),
-        bottles: String(r.bottles),
+        largeBottles: String(r.largeBottles),
+        smallBottles: String(r.smallBottles),
       })),
       batch.materials.map((m) => ({ material: m.material, quantity: String(m.quantity) })),
     );

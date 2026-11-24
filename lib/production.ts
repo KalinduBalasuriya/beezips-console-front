@@ -8,12 +8,13 @@ import type { BottleSize, InventoryItem } from "./types";
  * exercised on its own, and reused later by a real save path.
  */
 
-/** One flavor at one bottle size, as the form holds it while being edited. */
+/** One flavor's run, as the form holds it while being edited. The fruit kg
+ *  covers the whole run; either size may be left blank, but not both. */
 export interface ProductionRowInput {
   flavor: string;
-  bottleSize: BottleSize;
   kg: string;
-  bottles: string;
+  largeBottles: string;
+  smallBottles: string;
 }
 
 /** One "Add material" row, as the form holds it while being edited. */
@@ -60,16 +61,15 @@ export interface BatchConsumption {
 
 /**
  * Running totals across every flavor row — the figure staff watch while they
- * type. Adding a third row of 100 small bottles takes the small count from
- * 100 to 200 without touching the large count.
+ * type. Adding a row with 100 small bottles takes the small count from 100
+ * to 200 without touching the large count.
  */
 export function batchConsumption(rows: ProductionRowInput[]): BatchConsumption {
   let largeBottles = 0;
   let smallBottles = 0;
   for (const row of rows) {
-    const { emptyBottlesUsed } = autoFillConsumption(row.bottles);
-    if (row.bottleSize === "LARGE") largeBottles += emptyBottlesUsed;
-    else smallBottles += emptyBottlesUsed;
+    largeBottles += autoFillConsumption(row.largeBottles).emptyBottlesUsed;
+    smallBottles += autoFillConsumption(row.smallBottles).emptyBottlesUsed;
   }
   const totalBottles = largeBottles + smallBottles;
   return { largeBottles, smallBottles, lids: totalBottles, labels: totalBottles, totalBottles };
