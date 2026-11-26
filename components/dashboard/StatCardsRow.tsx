@@ -31,7 +31,7 @@ export default function StatCardsRow({ range, state }: StatCardsRowProps) {
       {/* The two cards that carry a Large/Small pair sit together: each needs a
           second line in a narrow column, so pairing them keeps either from
           stretching a single-figure card beside it. */}
-      <BottlesProducedStatCard range={range} state={state} sub={sub} />
+      <BottlesProducedStatCard range={range} sub={sub} />
       <BottlesSoldStatCard range={range} state={state} sub={sub} />
       <FinishedStockStatCard state={state} sub={sub} />
       <StatCard

@@ -51,6 +51,44 @@ export interface CreateProductionResponse {
   productionIds: number[];
 }
 
+/** A raw material drawn by a production, as GET /productions reports it. */
+export interface ProductionRawMaterialDto {
+  rawMaterialId: number;
+  name: string;
+  unit: RawMaterialUnit;
+  quantity: number;
+}
+
+/** One saved production (a single flavor run) within a day. */
+export interface ProductionFlavorDto {
+  productionId: number;
+  flavorId: number;
+  flavorName: string;
+  fruitKg: number;
+  largeQty: number;
+  smallQty: number;
+  rawMaterials: ProductionRawMaterialDto[];
+}
+
+/** GET /productions?from=yyyy-mm-dd&to=yyyy-mm-dd — one entry per production
+ *  day; `rawMaterials` is the day's total, `flavors` lists each production. */
+export interface ProductionDayDto {
+  /** ISO date, yyyy-mm-dd (DateOnly) */
+  date: string;
+  fruitKg: number;
+  largeQty: number;
+  smallQty: number;
+  totalBottles: number;
+  rawMaterials: ProductionRawMaterialDto[];
+  flavors: ProductionFlavorDto[];
+}
+
+/** Query arguments of GET /productions, both ends inclusive. */
+export interface GetProductionsArgs {
+  from: string;
+  to: string;
+}
+
 /** RFC 7807 problem details, as returned by the API's exception handler.
  *  `errors` is a list of messages for a validation failure (400). */
 export interface ProblemDetails {

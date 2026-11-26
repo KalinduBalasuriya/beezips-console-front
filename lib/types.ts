@@ -129,6 +129,32 @@ export interface ProductionDay {
   manager: string;
 }
 
+/** One flavor's share of a production day, as the production log shows it. */
+export interface ProductionLogFlavor {
+  flavor: string;
+  kg: number;
+  large: number;
+  small: number;
+}
+
+/**
+ * A production day as the production log renders it — mapped from the API's
+ * ProductionDayDto in store/api/productionsApi.ts. A flavor run more than once
+ * that day is merged into one entry, and `materials` already includes the
+ * packaging (bottles, lids, labels) implied by the bottles produced.
+ */
+export interface ProductionLogDay {
+  /** ISO business date, yyyy-mm-dd */
+  date: string;
+  fruitKg: number;
+  large: number;
+  small: number;
+  total: number;
+  /** biggest run first */
+  flavors: ProductionLogFlavor[];
+  materials: MaterialUsage[];
+}
+
 export type ExpenseCategory =
   | "Electricity"
   | "Water"

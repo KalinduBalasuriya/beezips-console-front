@@ -4,19 +4,18 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Factory } from "lucide-react";
 import {
-  bottlesProducedBySize,
-  bottlesProducedByFlavor,
-} from "../../lib/selectors";
+  selectProductionWindowTotals,
+  useGetProductionsQuery,
+} from "../../store/api/productionsApi";
 import { qty as fmtQty } from "../../lib/format";
 import { ROUTES } from "../../lib/routes";
 import { C, FONT_BODY, FONT_MONO } from "../../lib/theme";
 import HexBadge from "../ui/HexBadge";
 import { Skeleton } from "../ui/States";
-import type { BottleSize, DateRange, LoadState } from "../../lib/types";
+import type { BottleSize, DateRange } from "../../lib/types";
 
 interface BottlesProducedStatCardProps {
   range: DateRange | null;
-  state: LoadState;
   sub?: string;
   className?: string;
 }
@@ -25,8 +24,9 @@ interface BottlesProducedStatCardProps {
  * Total Bottles Produced stat card (spec §48.2).
  *
  * Bottles made in the current month to date, split into Large and Small, with
- * a per-flavor breakdown behind either figure. Everything is aggregated from
- * PRODUCTION_LOG rather than any stored summary (§48.2).
+ * a per-flavor breakdown behind either figure. Figures come from the
+ * productions API for the month-to-date window — the same getProductions
+ * query the Production Log page opens on, so the two always agree.
  *
  * Mirrors BottlesSoldStatCard's chrome and interaction so the two read as one
  * pair: hover where the pointer really supports it, tap everywhere, dismiss on
@@ -34,7 +34,6 @@ interface BottlesProducedStatCardProps {
  */
 export default function BottlesProducedStatCard({
   range,
-  state,
   sub,
   className = "",
 }: BottlesProducedStatCardProps) {
@@ -59,15 +58,21 @@ export default function BottlesProducedStatCard({
     typeof window !== "undefined" &&
     window.matchMedia("(hover: hover)").matches;
 
-  const loading = state !== "ready" || !range;
-  const totals = range ? bottlesProducedBySize(range) : null;
-  const byFlavor = range ? bottlesProducedByFlavor(range) : [];
+  /* range is null until the client has worked out "today", so the request
+     waits for it rather than firing with empty dates */
+  const { data, isFetching, isError } = useGetProductionsQuery(
+    { from: range?.start ?? "", to: range?.end ?? "" },
+    { skip: !range },
+  );
+  const loading = !range || (!isError && (isFetching || !data));
+  const totals = selectProductionWindowTotals(data);
+  const byFlavor = totals.byFlavor;
 
   const key = (size: BottleSize) =>
     (size === "LARGE" ? "large" : "small") as "large" | "small";
 
   const figure = (size: BottleSize, label: string) => {
-    const value = totals ? totals[key(size)] : 0;
+    const value = totals[key(size)];
     const open = openSize === size;
 
     return (
@@ -99,7 +104,7 @@ export default function BottlesProducedStatCard({
   };
 
   const breakdown = (size: BottleSize, label: string) => {
-    const value = totals ? totals[key(size)] : 0;
+    const value = totals[key(size)];
     const rows = byFlavor.filter((f) => f[key(size)] > 0);
 
     return (
@@ -197,6 +202,14 @@ export default function BottlesProducedStatCard({
 
       {loading ? (
         <Skeleton className="h-6 w-24 mt-1 sm:h-8 sm:w-32" />
+      ) : isError ? (
+        /* a failed request must not read as "0 bottles produced" */
+        <p
+          className="text-xs mt-1 sm:text-sm"
+          style={{ fontFamily: FONT_BODY, color: C.ink400 }}
+        >
+          Couldn&apos;t load production figures.
+        </p>
       ) : (
         <p className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 mt-0.5 sm:mt-1">
           {figure("LARGE", "Large")}
@@ -207,12 +220,12 @@ export default function BottlesProducedStatCard({
       <div className="flex items-center justify-between gap-2 mt-0.5 sm:mt-1">
         {/* the sub-line is secondary detail — it costs a row of height on a
             phone, so it only appears once there's room for it */}
-        {sub && !loading && (
+        {sub && !loading && !isError && (
           <p
             className="hidden sm:block text-xs"
             style={{ fontFamily: FONT_BODY, color: C.ink400 }}
           >
-            {fmtQty(totals?.total ?? 0)} total · {sub}
+            {fmtQty(totals.total)} total · {sub}
           </p>
         )}
         <Link
